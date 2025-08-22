@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      default: null,
+      required : true
     },
 
     googleId: {
@@ -94,3 +94,4 @@ userSchema.methods.generateRefreshToken = function(){
   )
 }
 
+export const User = mongoose.model("User",userSchema)
