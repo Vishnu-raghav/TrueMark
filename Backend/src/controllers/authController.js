@@ -8,8 +8,8 @@ const generateAccessAndRefreshToken = async (userId) => {
  try {
      const user = await User.findById(userId)
   
-     const refreshToken = await generateRefreshToken()
-     const accessToken = await generateAccessToken()
+     const accessToken = user.generateAccessToken()
+     const refreshToken = user.generateRefreshToken()
   
      user.refreshToken = refreshToken
      await user.save({validateBeforeSave : false})
@@ -39,7 +39,7 @@ const registerUser = asyncHandler(async (req , res) => {
    }
 
 
-   const existedUser = User.findOne({
+   const existedUser = await User.findOne({
       $or : [{email},{rollNo}] 
    })
 
@@ -74,7 +74,7 @@ const registerUser = asyncHandler(async (req , res) => {
 
 })
 
-const loginUser = asyncHandler(async (res,req) => {
+const loginUser = asyncHandler(async (req, res) => {
   // req.body
   // login access from email and password 
   // find user 
@@ -82,7 +82,7 @@ const loginUser = asyncHandler(async (res,req) => {
   // generate accesstoken and refresh token
   // send cookies
 
-  const {email,password} = req.body
+  const {email , password} = req.body
 
   if(!email) {
    throw new ApiError(400,"Email is required")
@@ -126,7 +126,7 @@ const loginUser = asyncHandler(async (res,req) => {
 
 })
 
-const logoutUser = asyncHandler(async (res,req) => {
+const logoutUser = asyncHandler(async (req,res) => {
   await User.findByIdAndUpdate(
       req.user._id,
       {
