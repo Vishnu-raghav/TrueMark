@@ -3,6 +3,23 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {User} from "../models/user.model.js"
 
+const generateAccessAndRefreshToken = async (userId) => {
+
+ try {
+     const user = await User.findById(userId)
+  
+     const refreshToken = await generateRefreshToken()
+     const accessToken = await generateAccessToken()
+  
+     user.refreshToken = refreshToken
+     await user.save({validateBeforeSave : false})
+  
+     return {refreshToken,accessToken}
+ } catch (error) {
+   throw new ApiError(500, "something went wrong while generating the access token and refresh token")
+ }
+
+}
 
 const registerUser = asyncHandler(async (req , res) => {
    // get user details from frontend
@@ -14,8 +31,6 @@ const registerUser = asyncHandler(async (req , res) => {
    // return res
 
    const {name, email, password, rollNo,collegeName,course,branch} = req.body
-   console.log("Email :",email , "password :",password , "Name :", name , "rollNo :",rollNo)
-
 
    if(
      [name,email,password,rollNo].some((field) => field?.trim() === "")
@@ -54,10 +69,60 @@ const registerUser = asyncHandler(async (req , res) => {
    }
 
    return res.status(201).json(
-      new ApiResponse(200,createdUser,"user  register successfully completed")
+      new ApiResponse(200,createdUser,"User register successfully completed")
    )
 
 })
 
+const loginUser = asyncHandler(async (res,req) => {
+  // req.body
+  // login access from email and password 
+  // find user 
+  // check password 
+  // generate accesstoken and refresh token
+  // send cookies
 
-export {registerUser}  
+  const {email,password} = req.body
+
+  if(!email) {
+   throw new ApiError(400,"Email is required")
+  }
+
+  const user = await User.findOne({email})
+
+  if(!user){
+   throw new ApiError(401,"Enable to find user please signup")
+  }
+
+  const userPassword = await user.isPasswordCorrect(password)
+
+  if(!userPassword){
+   throw new ApiError(400, "Invalid password")
+  }
+
+  const {accessToken,refreshToken} = await generateAccessAndRefreshToken(user._id)
+
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+
+  const options = {
+   httpOnly : true,
+   secure : true,
+  }
+
+  return res
+  .status(200)
+  .cookie("accessToken",accessToken,options)
+  .cookie("refreshToken",refreshToken,options)
+  .json(
+   new ApiResponse(
+      200,
+      {
+         user : loggedInUser,refreshToken,accessToken
+      },
+      "User logged In successfully"
+   )
+  )
+
+
+})
+export {registerUser,loginUser}  
