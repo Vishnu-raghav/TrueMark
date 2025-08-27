@@ -5,9 +5,6 @@ const certificateSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  studentName: {
-    type: String,
-  },
   certificateTitle: {
     type: String,
     required: true,
