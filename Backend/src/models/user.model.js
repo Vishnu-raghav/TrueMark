@@ -51,6 +51,13 @@ const userSchema = new mongoose.Schema(
     refreshToken: {
       type: String,
     },
+    
+    certificates:[
+      {
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "Certificate"
+      }
+    ]
   },
   { timestamps: true }
 );

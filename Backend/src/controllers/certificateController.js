@@ -27,6 +27,8 @@ const issueCerificate = asyncHandler(async (req, res) => {
     })
 
 
-    res.status(201).json(new ApiError(201,"certificate issued successfully",certificate))
+    return res
+    .status(201)
+    .json(new ApiError(201,"certificate issued successfully",certificate))
 })
 
