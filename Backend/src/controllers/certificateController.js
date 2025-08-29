@@ -33,7 +33,7 @@ const issueCerificate = asyncHandler(async (req, res) => {
         certificateTitle,
         issueDate,
         issuedBy,
-        certificateUrl: certificateFileURL,
+        certificateFileURL,
         user: userId,
     })
 
@@ -45,7 +45,7 @@ const issueCerificate = asyncHandler(async (req, res) => {
 const getStudentsCertificates = asyncHandler(async (req, res) => {
     const {userId} = req.params
 
-    const certificates = await Certificate.find({userId}).populate("userId","name email rollNo course branch -_id").sort({createdAt : -1})
+    const certificates = await Certificate.find({user:userId}).populate("userId","name email rollNo course branch -_id").sort({createdAt : -1})
 
     if(!certificates || certificates.length === 0){
         throw new ApiError(404,"No certificates found for this user")           
@@ -57,7 +57,7 @@ const getStudentsCertificates = asyncHandler(async (req, res) => {
 const getMycertificates = asyncHandler(async(req, res)=> {
     const userId = req.user._id
 
-    const certificates = await Certificate.find(userId).populate("userId","name email rollNo course branch -_id").sort({createdAt : -1})
+    const certificates = await Certificate.find({user:userId}).populate("userId","name email rollNo course branch -_id").sort({createdAt : -1})
 
     if(!certificates || certificates.length === 0){
         throw new ApiError(404,"No certificates found for this user")           
@@ -80,3 +80,30 @@ const deletecertificate = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200,"Certificate deleted successfully"))        
 
 })
+
+const getUserByRollNo = asyncHandler(async (req, res)=>{
+    const {query} = req.query
+
+    if(!query || query.trim() === ""){
+        throw new ApiError(400, "Roll number is required")
+    }
+
+    const user = await User.find({
+        rollNo: {$regex: query, $options: "i"}
+    }).limit(5)
+    .select("_id name rollNo course branch")
+
+    if(!user){
+        throw new ApiError(404,"User not found")
+    }
+
+    return res.status(200).json(new ApiResponse(200,"User found",user)) 
+})
+
+export {
+    issueCerificate,
+    getStudentsCertificates,        
+    deletecertificate,
+    getMycertificates,
+    getUserByRollNo
+}
