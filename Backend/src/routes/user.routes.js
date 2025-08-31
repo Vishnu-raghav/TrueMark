@@ -1,5 +1,12 @@
 import { Router } from "express";
-import { loginUser, logoutUser, refreshAccessToken, registerUser } from "../controllers/authController.js";
+import { 
+    loginUser, 
+    logoutUser, 
+    refreshAccessToken, 
+    registerUser,
+    changeCurrentPassword,
+    getCurrentUser
+ } from "../controllers/authController.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router()
@@ -12,6 +19,9 @@ router.route("/login").post(loginUser)
 
 router.route("/logout").post(verifyJWT,logoutUser)
 router.route("/refreshToken").post(refreshAccessToken)
+router.route("/changePassword").post(verifyJWT,changeCurrentPassword)
+router.route("/getCurrentUser").get(verifyJWT,getCurrentUser)
+
 
 
 

@@ -1,15 +1,38 @@
-import {uploadCertificate,getMyCertificates,getStudentsCertificates,getUserByRollNo,deleteCertificate} from "../controllers/certificateController.js"
-import {upload} from "../middlewares/multer.middleware.js"
+import { 
+  uploadCertificate,
+  getMyCertificates,
+  getStudentsCertificates,
+  getUserByRollNo,
+  deleteCertificate 
+} from "../controllers/certificateController.js";
+
+import {
+ verifyCertificateController
+} from "../controllers/verifyCertificateController.js"
+
+import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { isAdmin, isStudent } from "../middlewares/role.js";
 import { Router } from "express";
 
-const router = Router()
+const router = Router();
 
-router.route("/issueCertificate").post(verifyJWT,upload.single("certificate"),uploadCertificate)
-router.route("/getMyCertificates").get(verifyJWT,getMyCertificates)
-router.route("/getStudentsCertificates/:rollNo").get(verifyJWT,getStudentsCertificates)
-router.route("/getUserByRollNo/:rollNo").get(verifyJWT,getUserByRollNo)
-router.route("/deleteCertificate/:certificateId").delete(verifyJWT,deleteCertificate)   
+router.route("/issueCertificate")
+  .post(verifyJWT, isAdmin, upload.single("certificate"), uploadCertificate);
 
-export default router       
+router.route("/getMyCertificates")
+  .get(verifyJWT, isStudent, getMyCertificates);
 
+router.route("/getStudentsCertificates/:rollNo")
+  .get(verifyJWT, isAdmin, getStudentsCertificates);
+
+router.route("/getUserByRollNo/:rollNo")
+  .get(verifyJWT, isAdmin, getUserByRollNo);
+
+router.route("/deleteCertificate/:certificateId")
+  .delete(verifyJWT, isAdmin, deleteCertificate);
+
+router.route("/verifyCertificate")
+    .get(verifyCertificateController);
+
+export default router;

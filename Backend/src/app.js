@@ -23,6 +23,7 @@ import certificateRouter from "./routes/certificates.routes.js"
 
 app.use("/api/v1/users",userRouter)
 app.use("/api/v1/uploadCertificate",certificateRouter)
+app.use("/api/v1/verifyCertificate",certificateRouter)
 // app.use("/api/v1/uploadCertificate",express.static("certificates"))
 
 // https://localhost:8000/users/login
