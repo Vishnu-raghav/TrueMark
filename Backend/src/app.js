@@ -17,11 +17,13 @@ app.use(cookieParser())
 // import routes
 
 import userRouter from "./routes/user.routes.js"
+import certificateRouter from "./routes/certificates.routes.js"
 
 
-// route declaration  
 
 app.use("/api/v1/users",userRouter)
+app.use("/api/v1/uploadCertificate",certificateRouter)
+// app.use("/api/v1/uploadCertificate",express.static("certificates"))
 
 // https://localhost:8000/users/login
 

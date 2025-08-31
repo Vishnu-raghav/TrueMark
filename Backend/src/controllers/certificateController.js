@@ -7,7 +7,7 @@ import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js
 import { issueCertificate } from "../utils/hash.js"; 
 
 
-const issueCertificate = asyncHandler(async (req, res) => {
+const uploadCertificate = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   const { rollNo, certificateTitle, issueDate, issuedBy } = req.body;
 
@@ -122,7 +122,7 @@ const getUserByRollNo = asyncHandler(async (req, res) => {
 });
 
 export {
-  issueCertificate,
+  uploadCertificate,
   getStudentsCertificates,
   getMyCertificates,
   deleteCertificate,
