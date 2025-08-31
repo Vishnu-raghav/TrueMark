@@ -28,6 +28,11 @@ const certificateSchema = new mongoose.Schema({
     type : mongoose.Schema.Types.ObjectId,
     ref : "User",
     required : true
+  },
+  verificationId: {   
+    type: String,
+    required: true,
+    unique: true,
   }
 }, { timestamps: true });
 
