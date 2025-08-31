@@ -1,6 +1,7 @@
 
-import { compareHash } from "../utils/certificateUtils.js";
+import { compareHash } from "../utils/hash.js";
 import { Certificate } from "../models/certificate.model.js";
+import asyncHandler from "../utils/asyncHandler.js"
 
 const verifyCertificateController = asyncHandler(async (req, res) => {
   const { verificationId } = req.query; 

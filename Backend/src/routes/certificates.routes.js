@@ -12,7 +12,7 @@ import {
 
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { isAdmin, isStudent } from "../middlewares/role.js";
+import { isAdmin, isStudent } from "../middlewares/role.middleware.js";
 import { Router } from "express";
 
 const router = Router();
