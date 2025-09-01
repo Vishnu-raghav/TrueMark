@@ -6,7 +6,6 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import { issueCertificate } from "../utils/hash.js"; 
 
-
 const uploadCertificate = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   const { rollNo, certificateTitle, issueDate, issuedBy } = req.body;
@@ -20,42 +19,41 @@ const uploadCertificate = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-const certificateLocalPath = req.file?.path;
-
-if (!certificateLocalPath) {
+  const certificateLocalPath = req.file?.path;
+  if (!certificateLocalPath) {
     throw new ApiError(400, "Certificate file is required");
-}
+  }
 
-const certificateImage = await uploadOnCloudinary(certificateLocalPath);
-
-if (!certificateImage) {
+  const certificateImage = await uploadOnCloudinary(certificateLocalPath);
+  if (!certificateImage) {
     throw new ApiError(500, "Something went wrong while uploading the certificate");
-}
-  
-   const { verificationId, hash } = issueCertificate({
-    rollNo,
-    certificateTitle,
-    issueDate,
-    issuedBy,
-    userId,
-  });
+  }
+
+  const studentData = {
+    rollNo: rollNo.trim(),
+    certificateTitle: certificateTitle.trim(),
+    issueDate: new Date(issueDate).toISOString(), 
+    issuedBy: issuedBy.trim(),
+    userId: userId.toString(),
+  };
+
+  const { verificationId, hmac } = issueCertificate(studentData);
 
   const certificate = await Certificate.create({
     verificationId,
-    rollNo,
-    certificateTitle,
-    issueDate,
-    issuedBy,
+    rollNo: studentData.rollNo,
+    certificateTitle: studentData.certificateTitle,
+    issueDate: studentData.issueDate,
+    issuedBy: studentData.issuedBy,
     certificateFileURL: certificateImage.secure_url,
     userId,
-    hash,
+    hmac, 
   });
 
   return res
     .status(201)
     .json(new ApiResponse(201, "Certificate issued successfully", certificate));
 });
-
 
 const getStudentsCertificates = asyncHandler(async (req, res) => {
   const { userId } = req.params;

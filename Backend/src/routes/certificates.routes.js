@@ -32,7 +32,7 @@ router.route("/getUserByRollNo/:rollNo")
 router.route("/deleteCertificate/:certificateId")
   .delete(verifyJWT, isAdmin, deleteCertificate);
 
-router.route("/verifyCertificate")
+router.route("/verifyCertificate/:verificationId")
     .get(verifyCertificateController);
 
 export default router;

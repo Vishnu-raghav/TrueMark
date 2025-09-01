@@ -1,18 +1,19 @@
 import crypto from "crypto";
 import { nanoid } from "nanoid";
 
-export const generateHash = (data) => {
-  if (!data) throw new Error("No data provided for hashing");
+const SECRET_KEY = process.env.HMAC_SECRET || "MY_SUPER_SECRET_KEY";
 
+export const generateHMAC = (data) => {
+  if (!data) throw new Error("No data provided for hashing");
   const bufferData = Buffer.isBuffer(data) ? data : Buffer.from(data, "utf-8");
-  return crypto.createHash("sha256").update(bufferData).digest("hex");
+  return crypto.createHmac("sha256", SECRET_KEY).update(bufferData).digest("hex");
 };
 
-export const compareHash = (hash1, hash2) => {
-  if (!hash1 || !hash2) return false;
+export const compareHMAC = (hmac1, hmac2) => {
+  if (!hmac1 || !hmac2) return false;
 
-  const buf1 = Buffer.from(hash1, "hex");
-  const buf2 = Buffer.from(hash2, "hex");
+  const buf1 = Buffer.from(hmac1, "hex");
+  const buf2 = Buffer.from(hmac2, "hex");
   if (buf1.length !== buf2.length) return false;
 
   return crypto.timingSafeEqual(buf1, buf2);
@@ -21,16 +22,19 @@ export const compareHash = (hash1, hash2) => {
 export const issueCertificate = (studentData) => {
   const verificationId = nanoid(8);
   const certData = JSON.stringify(studentData);
-  const hash = generateHash(certData);
+  const hmac = generateHMAC(certData);
 
   return {
     verificationId,
     studentData,
-    hash,
+    hmac,
   };
 };
 
-export const verifyCertificate = (certId, inputHash, storedHash) => {
+export const verifyCertificate = (certId, studentData, storedHMAC) => {
+  const dataToVerify = JSON.stringify(studentData);
+  const inputHMAC = generateHMAC(dataToVerify);
+
   console.log(`Verifying Certificate ID: ${certId}`);
-  return compareHash(inputHash, storedHash);
+  return compareHMAC(inputHMAC, storedHMAC);
 };
