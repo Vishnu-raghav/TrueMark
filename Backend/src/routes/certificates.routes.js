@@ -17,7 +17,7 @@ import { Router } from "express";
 
 const router = Router();
 
-router.route("/issueCertificate")
+router.route("/issueCertificate/:userId")
   .post(verifyJWT, isAdmin, upload.single("certificate"), optimizeImage,uploadCertificate);
 
 router.route("/getMyCertificates")

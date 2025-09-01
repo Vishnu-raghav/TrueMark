@@ -11,28 +11,17 @@ app.use(cors({
 app.use(express.json({limit : "16Kb"}))
 app.use(express.urlencoded({extended : true , limit : "16Kb"}))
 app.use(express.static("public"))
-
 app.use(cookieParser())
 
 // import routes
-
 import userRouter from "./routes/user.routes.js"
 import certificateRouter from "./routes/certificates.routes.js"
 
 
-
+// routes
 app.use("/api/v1/users",userRouter)
-app.use("/api/v1/uploadCertificate",certificateRouter)
-app.use("/api/v1/verifyCertificate",certificateRouter)
-// app.use("/api/v1/uploadCertificate",express.static("certificates"))
-
-// https://localhost:8000/users/login
-
-
-
-
-
-
+app.use("/api/v1/certificates",certificateRouter)
+app.use("/api/v1/verify",certificateRouter)
 
 export {app}
 

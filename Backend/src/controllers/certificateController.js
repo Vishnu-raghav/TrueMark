@@ -20,16 +20,18 @@ const uploadCertificate = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
+const certificateLocalPath = req.file?.path;
 
-  const certificateLocalpath = req.file?.path;
-  if (!certificateLocalpath) {
+if (!certificateLocalPath) {
     throw new ApiError(400, "Certificate file is required");
-  }
+}
 
-  const certificateFileURL = await uploadOnCloudinary(certificateLocalpath);
-  if (!certificateFileURL) {
+const certificateImage = await uploadOnCloudinary(certificateLocalPath);
+
+if (!certificateImage) {
     throw new ApiError(500, "Something went wrong while uploading the certificate");
-  }
+}
+  
    const { verificationId, hash } = issueCertificate({
     rollNo,
     certificateTitle,
@@ -44,7 +46,7 @@ const uploadCertificate = asyncHandler(async (req, res) => {
     certificateTitle,
     issueDate,
     issuedBy,
-    certificateFileURL,
+    certificateFileURL: certificateImage.secure_url,
     userId,
     hash,
   });
