@@ -19,7 +19,9 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required : true
+      required : function() {
+        return !this.googleId
+      }
     },
 
     googleId: {
@@ -36,7 +38,9 @@ const userSchema = new mongoose.Schema(
     rollNo: {
       type: String,
       unique: true,
-      required: true, 
+      required:function () {
+        return this.role === "student"; 
+     },
     },
     collegeName: {
       type: String,

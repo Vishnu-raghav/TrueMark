@@ -25,13 +25,6 @@ const generateAccessAndRefreshToken = async (userId) => {
 }
 
 const registerUser = asyncHandler(async (req , res) => {
-   // get user details from frontend
-   // validation - not empty
-   // if user already exist
-   // create a user object
-   // remove password and refresh token field from response
-   // check for user creation 
-   // return res
 
    const {name, email, password, rollNo,collegeName,course,branch} = req.body
 
@@ -62,7 +55,7 @@ const registerUser = asyncHandler(async (req , res) => {
    });
 
 
-   const createdUser = User.findById(user._id).select(
+   const createdUser = await User.findById(user._id).select(
       "-password -refreshToken" 
    )
 
@@ -78,12 +71,6 @@ const registerUser = asyncHandler(async (req , res) => {
 })
 
 const loginUser = asyncHandler(async (req, res) => {
-  // req.body
-  // login access from email and password 
-  // find user 
-  // check password 
-  // generate accesstoken and refresh token
-  // send cookies
 
   const {email , password} = req.body
 
@@ -233,9 +220,7 @@ const getCurrentUser = asyncHandler(async (req,res) => {
    return res
    .status(200)
    .json(
-      200,
-      req.user,
-      "Current User fetch successfully"
+      new ApiResponse(200, req.user, "Current User fetch successfully")
    )
 })
 

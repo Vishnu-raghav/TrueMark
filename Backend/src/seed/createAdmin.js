@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import bcrypt from "bcrypt";
 import connectDB from "../db/index.js";
 import { User } from "../models/user.model.js"; 
 
@@ -15,14 +14,11 @@ const createDefaultAdmin = async () => {
       return process.exit(0);
     }
 
-    const hashed = await bcrypt.hash("admin123", 10);
-
     await User.create({
       name: "Super Admin",
       email: "vishnuraghav776@gmail.com",
-      password: hashed,
+      password: "Admin@123",
       role: "admin",   
-      rollNo: "ADMIN001",
       collegeName: "NA",
       course: "NA",
       branch: "NA",
