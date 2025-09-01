@@ -10,7 +10,7 @@ import {
  verifyCertificateController
 } from "../controllers/verifyCertificateController.js"
 
-import { upload } from "../middlewares/multer.middleware.js";
+import { upload, optimizeImage } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { isAdmin, isStudent } from "../middlewares/role.middleware.js";
 import { Router } from "express";
@@ -18,7 +18,7 @@ import { Router } from "express";
 const router = Router();
 
 router.route("/issueCertificate")
-  .post(verifyJWT, isAdmin, upload.single("certificate"), uploadCertificate);
+  .post(verifyJWT, isAdmin, upload.single("certificate"), optimizeImage,uploadCertificate);
 
 router.route("/getMyCertificates")
   .get(verifyJWT, isStudent, getMyCertificates);
