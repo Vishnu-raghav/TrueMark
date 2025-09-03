@@ -108,17 +108,26 @@ const getUserByRollNo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Roll number is required");
   }
 
-  const users = await User.find({
-    rollNo: { $regex: query, $options: "i" },
-  })
-    .limit(5)
-    .select("_id name rollNo course branch");
+  let users;
+
+  if (query.includes("-")) {
+    users = await User.find({ rollNo: query })
+      .select("_id name rollNo course branch");
+  } else {
+    users = await User.find({
+      rollNo: { $regex: query, $options: "i" },
+    })
+      .limit(5)
+      .select("_id name rollNo course branch");
+  }
 
   if (!users || users.length === 0) {
     throw new ApiError(404, "User not found");
   }
 
-  return res.status(200).json(new ApiResponse(200, "User(s) found", users));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "User(s) found", users));
 });
 
 
