@@ -23,10 +23,10 @@ router.route("/issueCertificate/:userId")
 router.route("/getMyCertificates")
   .get(verifyJWT, isStudent, getMyCertificates);
 
-router.route("/getStudentsCertificates/:rollNo")
+router.route("/getStudentsCertificates/:userId")
   .get(verifyJWT, isAdmin, getStudentsCertificates);
 
-router.route("/getUserByRollNo/:rollNo")
+router.route("/getUserByRollNo")
   .get(verifyJWT, isAdmin, getUserByRollNo);
 
 router.route("/deleteCertificate/:certificateId")
