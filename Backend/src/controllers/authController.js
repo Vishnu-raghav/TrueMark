@@ -186,7 +186,6 @@ const logoutUser = asyncHandler(async (req, res) => {
 /**
  * Refresh access token
  * POST /auth/refresh
- * Cookie or body can contain refreshToken
  */
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;

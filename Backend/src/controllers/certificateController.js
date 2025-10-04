@@ -6,7 +6,7 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import { generateHMAC } from "../utils/hash.js";
 import { nanoid } from "nanoid";
-import { AuditLog } from "../models/auditLog.model.js";
+import { AuditLog } from "../models/AuditLog.model.js";
 
 /**
  * Helper for writing audit log
