@@ -1,140 +1,149 @@
-import { Certificate } from "../models/certificate.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { Certificate } from "../models/certificate.model.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
-import { issueCertificate } from "../utils/hash.js"; 
+import { generateHMAC } from "../utils/hash.js";
+import { nanoid } from "nanoid";
+import { AuditLog } from "../models/auditLog.model.js";
 
-const uploadCertificate = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
-  const { rollNo, certificateTitle, issueDate, issuedBy } = req.body;
+/**
+ * Helper for writing audit log
+ */
+const writeAudit = async ({ req, user = null, organization = null, action, details = {}, severity = "INFO" }) => {
+  try {
+    await AuditLog.create({
+      organization: organization ? organization._id || organization : user?.organization || null,
+      user: user ? user._id || user : null,
+      action,
+      details,
+      ipAddress: req?.ip || (req?.headers && req.headers["x-forwarded-for"]) || null,
+      userAgent: req?.headers?.["user-agent"] || null,
+      severity,
+    });
+  } catch (err) {
+    console.error("Audit log write failed:", err.message);
+  }
+};
 
-  if ([rollNo, certificateTitle, issueDate, issuedBy].some(field => !field?.trim())) {
-    throw new ApiError(400, "All fields are required");
+/**
+ * ISSUE Certificate
+ */
+const createCertificate = asyncHandler(async (req, res) => {
+  const { title, description, recipientId, expiryDate, metaData } = req.body;
+
+  if (!title || !recipientId) {
+    throw new ApiError(400, "Title and recipientId are required");
   }
 
-  const user = await User.findById(userId);
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
+  const recipient = await User.findById(recipientId);
+  if (!recipient) throw new ApiError(404, "Recipient not found");
 
-  const certificateLocalPath = req.file?.path;
-  if (!certificateLocalPath) {
+  const certificateFile = req.file;
+  if (!certificateFile) {
     throw new ApiError(400, "Certificate file is required");
   }
 
-  const certificateImage = await uploadOnCloudinary(certificateLocalPath);
-  if (!certificateImage) {
-    throw new ApiError(500, "Something went wrong while uploading the certificate");
+  const uploadedFile = await uploadOnCloudinary(certificateFile.path);
+  if (!uploadedFile?.secure_url) {
+    throw new ApiError(500, "Failed to upload certificate file");
   }
 
-  const studentData = {
-    rollNo: rollNo.trim(),
-    certificateTitle: certificateTitle.trim(),
-    issueDate: new Date(issueDate).toISOString(), 
-    issuedBy: issuedBy.trim(),
-    userId: userId.toString(),
-  };
+  const certificateId = nanoid(8); 
 
-  const { verificationId, hmac } = issueCertificate(studentData);
+  const dataToHash = JSON.stringify({
+    title,
+    recipient: recipient._id.toString(),
+    issuedBy: req.user.organization.toString(),
+    issueDate: new Date().toISOString(),
+  });
+
+  const verificationHash = generateHMAC(dataToHash);
 
   const certificate = await Certificate.create({
-    verificationId,
-    rollNo: studentData.rollNo,
-    certificateTitle: studentData.certificateTitle,
-    issueDate: studentData.issueDate,
-    issuedBy: studentData.issuedBy,
-    certificateFileURL: certificateImage.secure_url,
-    userId,
-    hmac, 
+    title,
+    description,
+    certificateId,
+    verificationHash,
+    issueDate: new Date(),
+    expiryDate,
+    recipient: recipient._id,
+    issuedBy: req.user.organization,
+    fileUrl: uploadedFile.secure_url,
+    metaData,
+  });
+
+  await writeAudit({
+    req,
+    user: req.user,
+    organization: req.user.organization,
+    action: "ISSUE_CERTIFICATE",
+    details: { certificateId, recipient: recipient.email },
   });
 
   return res
     .status(201)
-    .json(new ApiResponse(201, "Certificate issued successfully", certificate));
+    .json(new ApiResponse(201, certificate, "Certificate issued successfully"));
 });
 
-const getStudentsCertificates = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
-
-  const certificates = await Certificate.find({ userId })
-    .populate("userId", "name email rollNo course branch -_id")
-    .sort({ createdAt: -1 });
-
-  if (!certificates || certificates.length === 0) {
-    throw new ApiError(404, "No certificates found for this user");
-  }
-
-  return res.status(200).json(new ApiResponse(200, `${certificates.length} certificates found`, certificates));
-});
-
-const getMyCertificates = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-
-  const certificates = await Certificate.find({ userId })
-    .populate("userId", "name email rollNo course branch -_id")
-    .sort({ createdAt: -1 });
-
-  if (!certificates || certificates.length === 0) {
-    throw new ApiError(404, "No certificates found for this user");
-  }
-
-  return res.status(200).json(new ApiResponse(200, `${certificates.length} certificates found`, certificates));
-});
-
+/**
+ * DELETE Certificate
+ */
 const deleteCertificate = asyncHandler(async (req, res) => {
-  const { certificateId } = req.params;
+  const { id } = req.params;
+  const certificate = await Certificate.findById(id);
+  if (!certificate) throw new ApiError(404, "Certificate not found");
 
-  const certificate = await Certificate.findById(certificateId);
-  if (!certificate) {
-    throw new ApiError(404, "Certificate not found");
-  }
-
-  const deletedFromCloudinary = await deleteFromCloudinary(certificate.certificateFileURL);
-  if (!deletedFromCloudinary) {
-    throw new ApiError(500, "Something went wrong while deleting the certificate from cloud");
+  if (certificate.fileUrl) {
+    const deletedFromCloudinary = await deleteFromCloudinary(certificate.fileUrl);
+    if (!deletedFromCloudinary) {
+      throw new ApiError(500, "Failed to delete certificate from Cloudinary");
+    }
   }
 
   await certificate.deleteOne();
 
-  return res.status(200).json(new ApiResponse(200, "Certificate deleted successfully"));
+  await writeAudit({
+    req,
+    user: req.user,
+    organization: req.user.organization,
+    action: "DELETE_CERTIFICATE",
+    details: { certificateId: certificate.certificateId },
+  });
+
+  return res.status(200).json(new ApiResponse(200, {}, "Certificate deleted successfully"));
 });
 
-const getUserByRollNo = asyncHandler(async (req, res) => {
-  const { query } = req.query;
+/**
+ * GET Certificate by ID
+ */
+const getCertificate = asyncHandler(async (req, res) => {
+  const certificate = await Certificate.findById(req.params.id)
+    .populate("recipient", "name email")
+    .populate("issuedBy", "name email");
 
-  if (!query || query.trim() === "") {
-    throw new ApiError(400, "Roll number is required");
-  }
+  if (!certificate) throw new ApiError(404, "Certificate not found");
 
-  let users;
+  await writeAudit({
+    req,
+    user: req.user,
+    organization: req.user.organization,
+    action: "VIEW_CERTIFICATE",
+    details: { certificateId: certificate.certificateId },
+  });
 
-  if (query.includes("-")) {
-    users = await User.find({ rollNo: query })
-      .select("_id name rollNo course branch");
-  } else {
-    users = await User.find({
-      rollNo: { $regex: query, $options: "i" },
-    })
-      .limit(5)
-      .select("_id name rollNo course branch");
-  }
-
-  if (!users || users.length === 0) {
-    throw new ApiError(404, "User not found");
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, "User(s) found", users));
+  return res.status(200).json(new ApiResponse(200, certificate, "Certificate fetched successfully"));
 });
 
+/**
+ * LIST Certificates (organization-level)
+ */
+const listCertificates = asyncHandler(async (req, res) => {
+  const certificates = await Certificate.find({ issuedBy: req.user.organization })
+    .populate("recipient", "name email");
 
-export {
-  uploadCertificate,
-  getStudentsCertificates,
-  getMyCertificates,
-  deleteCertificate,
-  getUserByRollNo,
-};
+  return res.status(200).json(new ApiResponse(200, certificates, "Certificates list fetched successfully"));
+});
+
+export { createCertificate, deleteCertificate, getCertificate, listCertificates };
