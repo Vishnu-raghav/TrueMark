@@ -1,229 +1,266 @@
-import asyncHandler from "../utils/asyncHandler.js"
-import {ApiError} from "../utils/ApiError.js"
-import {ApiResponse} from "../utils/ApiResponse.js"
-import {User} from "../models/user.model.js"
-import jwt from "jsonwebtoken"
+import asyncHandler from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { User } from "../models/user.model.js";
+import { Organization } from "../models/Organization.model.js";
+import { AuditLog } from "../models/AuditLog.model.js";
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
+/**
+ * helper: create audit log
+ */
+const writeAudit = async ({ req, user = null, organization = null, action, details = {}, severity = "INFO" }) => {
+  try {
+    await AuditLog.create({
+      organization: organization ? organization._id || organization : user?.organization || null,
+      user: user ? user._id || user : null,
+      action,
+      details,
+      ipAddress: req?.ip || (req?.headers && req.headers["x-forwarded-for"]) || null,
+      userAgent: req?.headers?.["user-agent"] || null,
+      severity,
+    });
+  } catch (e) {
+    console.error("Audit write failed:", e?.message || e);
+  }
+};
 
+/**
+ * token creator: saves refresh token on user doc
+ */
+const generateAccessAndRefreshToken = async (user) => {
+  try {
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
 
-const generateAccessAndRefreshToken = async (userId) => {
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
 
- try {
-     const user = await User.findById(userId)
-  
-     const accessToken = user.generateAccessToken()
-     const refreshToken = user.generateRefreshToken()
-  
-     user.refreshToken = refreshToken
-     await user.save({validateBeforeSave : false})
-  
-     return {refreshToken,accessToken}
- } catch (error) {
-   throw new ApiError(500, "something went wrong while generating the access token and refresh token")
- }
+    return { accessToken, refreshToken };
+  } catch (err) {
+    throw new ApiError(500, "Error generating tokens");
+  }
+};
 
-}
+/**
+ * Register organization + create org admin
+ * POST /auth/register-organization
+ * body: { orgName, orgEmail, adminName, adminEmail, adminPassword, type }
+ */
+const registerOrganization = asyncHandler(async (req, res) => {
+  const { orgName, orgEmail, adminName, adminEmail, adminPassword, type } = req.body;
 
-const registerUser = asyncHandler(async (req , res) => {
+  if (![orgName, orgEmail, adminName, adminEmail, adminPassword].every(Boolean)) {
+    throw new ApiError(400, "All fields are required");
+  }
 
-   const {name, email, password, rollNo,collegeName,course,branch} = req.body
+  const existingOrg = await Organization.findOne({ $or: [{ name: orgName }, { email: orgEmail }] });
+  if (existingOrg) throw new ApiError(400, "Organization already exists");
 
-   if(
-     [name,email,password,rollNo].some((field) => field?.trim() === "")
-   ){
-     throw new ApiError(400,"All fileds are required")
-   }
+  const tenantKey = `ORG-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+  const org = await Organization.create({
+    name: orgName,
+    email: orgEmail,
+    type: type || "other",
+    tenantKey,
+    status: process.env.AUTO_APPROVE_ORG === "true" ? "active" : "pending",
+  });
 
+  const existingUser = await User.findOne({ email: adminEmail });
+  if (existingUser) {
+    existingUser.organization = org._id;
+    existingUser.role = "orgAdmin";
+    await existingUser.save({ validateBeforeSave: false });
+    await writeAudit({ req, user: existingUser, organization: org, action: "REGISTER_ORG", details: { info: "existing user became orgAdmin" } });
+    return res.status(201).json(new ApiResponse(201, { organization: org, user: existingUser }, "Organization created and admin assigned (existing user)"));
+  }
 
-   const existedUser = await User.findOne({
-      $or : [{email},{rollNo}] 
-   })
+  const user = await User.create({
+    name: adminName,
+    email: adminEmail,
+    password: adminPassword,
+    role: "orgAdmin",
+    organization: org._id,
+  });
 
-   if(existedUser) {
-      throw new ApiError(400,"User already exist")
-   }
+  const safeUser = await User.findById(user._id).select("-password -refreshToken");
 
-   const user = await User.create({
+  await writeAudit({ req, user: safeUser, organization: org, action: "REGISTER_ORG", details: { tenantKey } });
+
+  return res.status(201).json(new ApiResponse(201, { organization: org, user: safeUser }, "Organization registered successfully"));
+});
+
+/**
+ * Register user (join existing org) - invite flow OR self-join by orgId
+ * POST /auth/register
+ * body: { name, email, password, organizationId }
+ */
+const registerUser = asyncHandler(async (req, res) => {
+  const { name, email, password, organizationId } = req.body;
+
+  if (![name, email, password, organizationId].every(Boolean)) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  const org = await Organization.findById(organizationId);
+  if (!org || org.status !== "active") throw new ApiError(400, "Organization not available or not active");
+
+  const existedUser = await User.findOne({ email });
+  if (existedUser) throw new ApiError(400, "User already exists");
+
+  const user = await User.create({
     name,
     email,
     password,
-    rollNo,
-    collegeName,
-    course,
-    branch,
-    role: "student"  
-   });
+    role: "member",
+    organization: org._id,
+  });
 
+  const safeUser = await User.findById(user._id).select("-password -refreshToken");
 
-   const createdUser = await User.findById(user._id).select(
-      "-password -refreshToken" 
-   )
+  await writeAudit({ req, user: safeUser, organization: org, action: "REGISTER_USER", details: { role: "member" } });
 
+  return res.status(201).json(new ApiResponse(201, safeUser, "User registered and joined organization"));
+});
 
-   if(!createdUser){
-      throw new ApiError(500, "Something went wrong while registering the user")
-   }
-
-   return res.status(201).json(
-      new ApiResponse(200,createdUser,"User register successfully completed")
-   )
-
-})
-
+/**
+ * Login
+ * POST /auth/login
+ * body: { email, password }
+ */
 const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) throw new ApiError(400, "Email and password required");
 
-  const {email , password} = req.body
+  const user = await User.findOne({ email }).select("+password +refreshToken");
+  if (!user) throw new ApiError(401, "Invalid credentials");
 
-  if(!email) {
-   throw new ApiError(400,"Email is required")
+  const ok = await user.isPasswordCorrect(password);
+  if (!ok) {
+    await writeAudit({ req, user: user._id, action: "FAILED_LOGIN", details: { email } });
+    throw new ApiError(401, "Invalid credentials");
   }
 
-  const user = await User.findOne({email})
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user);
 
-  if(!user){
-   throw new ApiError(401,"Enable to find user please signup")
-  }
+  const safeUser = await User.findById(user._id).select("-password -refreshToken");
 
-  const userPassword = await user.isPasswordCorrect(password)
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+  };
 
-  if(!userPassword){
-   throw new ApiError(400, "Invalid password")
-  }
-
-  const {accessToken,refreshToken} = await generateAccessAndRefreshToken(user._id)
-
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
-
-  const options = {
-   httpOnly : true,
-   secure : true,
-  }
+  await writeAudit({ req, user: safeUser, action: "USER_LOGIN", details: { method: "password" } });
 
   return res
-  .status(200)
-  .cookie("accessToken",accessToken,options)
-  .cookie("refreshToken",refreshToken,options)
-  .json(
-   new ApiResponse(
-      200,
-      {
-         user : loggedInUser,refreshToken,accessToken
-      },
-      "User logged In successfully"
-   )
-  )
+    .status(200)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .json(new ApiResponse(200, { user: safeUser, accessToken, refreshToken }, "Logged in successfully"));
+});
 
+/**
+ * Logout
+ * POST /auth/logout
+ */
+const logoutUser = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  if (userId) {
+    await User.findByIdAndUpdate(userId, { $set: { refreshToken: undefined } }, { new: true });
+    await writeAudit({ req, user: userId, action: "USER_LOGOUT" });
+  }
 
-})
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  };
 
-const logoutUser = asyncHandler(async (req,res) => {
-  await User.findByIdAndUpdate(
-      req.user._id,
-      {
-         $set : {
-            refreshToken : undefined,
-         }
-      },
-      {
-         new : true
-      }
-   )
+  res.clearCookie("accessToken", cookieOptions).clearCookie("refreshToken", cookieOptions);
+  return res.status(200).json(new ApiResponse(200, {}, "Logged out successfully"));
+});
 
-   const options = {
-      httpOnly : true,
-      secure : true,
-   }
+/**
+ * Refresh access token
+ * POST /auth/refresh
+ * Cookie or body can contain refreshToken
+ */
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+  if (!incomingRefreshToken) throw new ApiError(401, "No refresh token provided");
 
-   res.status(200).clearCookie("accessToken",options).clearCookie("refreshToken", options).json(
-      new ApiResponse(200,{},"User Logged Out successfully")
-   )
-})
+  try {
+    const decoded = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const user = await User.findById(decoded?._id).select("+refreshToken");
+    if (!user) throw new ApiError(401, "Invalid token");
 
-
-const refreshAccessToken = asyncHandler(async (req,res) => {
-   const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
-
-   if(!incomingRefreshToken){
-      throw new ApiError(401,"Unauthorized Request")
-   }
-
-
-   try {
-      const decodedToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
-   
-      const user = await User.findById(decodedToken?._id)
-   
-      if(!user){
-         throw new ApiError(401,"Refresh token")
-      }
-   
-      if(incomingRefreshToken !== user?.refreshToken){
-         throw new ApiError(401,"Refresh token is expire or used")
-      }
-      
-      const options = {
-         httpOnly : true,
-         secure : true
-      }
-   
-       const {newRefreshToken , accessToken} = await generateAccessAndRefreshToken(user._id)
-   
-       return res
-       .status(200)
-       .cookie("accessToken",accessToken,options)
-       .cookie("refreshToken",newRefreshToken,options)
-       .json(
-         new ApiResponse(
-            200,
-            {
-              refreshToken : newRefreshToken , accessToken,
-            },
-            "Access Token is refreshed"
-         )
-       )
-   } catch (error) {
-      throw new ApiError(401,error?.message || "Invalid refresh Token")
-   }
-
-   
-})
-
-const changeCurrentPassword = asyncHandler( async (req,res) => {
-    const {oldPassword,newPassword,confirmPassword} = req.body
-
-    const user = await User.findById(req.user?._id)
-
-    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
-
-    if(!isPasswordCorrect){
-      throw new ApiError(400, "incorrect password")
-    }
-    
-    if(newPassword !== confirmPassword){
-      throw new ApiError(400, "Password do not Match")
+    if (incomingRefreshToken !== user.refreshToken) {
+      user.refreshToken = undefined;
+      await user.save({ validateBeforeSave: false });
+      throw new ApiError(401, "Refresh token invalid or rotated");
     }
 
-    user.password = newPassword
-    await user.save({validateBeforeSave : false})
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user);
 
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    };
+
+    await writeAudit({ req, user: user._id, action: "REFRESH_TOKEN" });
 
     return res
-    .status(200)
-    .json(
-      new ApiResponse(200, "Password change successfully")
-    )
+      .status(200)
+      .cookie("accessToken", accessToken, cookieOptions)
+      .cookie("refreshToken", refreshToken, cookieOptions)
+      .json(new ApiResponse(200, { accessToken, refreshToken }, "Token refreshed"));
+  } catch (err) {
+    throw new ApiError(401, err.message || "Invalid refresh token");
+  }
+});
 
-    
-})
+/**
+ * Change current password
+ * POST /auth/change-password
+ * body: { oldPassword, newPassword, confirmPassword }
+ * user must be authenticated (req.user available)
+ */
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword, confirmPassword } = req.body;
+  if (!oldPassword || !newPassword || !confirmPassword) throw new ApiError(400, "All fields required");
 
-const getCurrentUser = asyncHandler(async (req,res) => {
-   return res
-   .status(200)
-   .json(
-      new ApiResponse(200, req.user, "Current User fetch successfully")
-   )
-})
+  const user = await User.findById(req.user._id).select("+password");
+  if (!user) throw new ApiError(404, "User not found");
 
+  const match = await user.isPasswordCorrect(oldPassword);
+  if (!match) throw new ApiError(400, "Old password incorrect");
 
+  if (newPassword !== confirmPassword) throw new ApiError(400, "Passwords do not match");
 
-export {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser}  
+  user.password = newPassword;
+  await user.save(); 
+
+  await writeAudit({ req, user: user._id, action: "CHANGE_PASSWORD" });
+
+  return res.status(200).json(new ApiResponse(200, {}, "Password updated"));
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password -refreshToken").populate("organization");
+  return res.status(200).json(new ApiResponse(200, user, "Current user fetched"));
+});
+
+export {
+  registerOrganization,
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+};
