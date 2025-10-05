@@ -10,7 +10,7 @@ const organizationSchema = new mongoose.Schema(
 
     type: {
       type: String,
-      enum: ["college", "coaching", "company", "ngo", "edtech", "other"],
+      enum: ["college", "coaching", "company", "NGO", "edtech", "other"],
       default: "other",
     },
 

@@ -45,35 +45,52 @@ const generateAccessAndRefreshToken = async (user) => {
 
 /**
  * Register organization + create org admin
- * POST /auth/register-organization
- * body: { orgName, orgEmail, adminName, adminEmail, adminPassword, type }
  */
-const registerOrganization = asyncHandler(async (req, res) => {
-  const { orgName, orgEmail, adminName, adminEmail, adminPassword, type } = req.body;
+
+ const registerOrganization = asyncHandler(async (req, res) => {
+  const { orgName, orgEmail, adminName, adminEmail, adminPassword, type, address, phone, website } = req.body;
 
   if (![orgName, orgEmail, adminName, adminEmail, adminPassword].every(Boolean)) {
     throw new ApiError(400, "All fields are required");
   }
 
-  const existingOrg = await Organization.findOne({ $or: [{ name: orgName }, { email: orgEmail }] });
+  const existingOrg = await Organization.findOne({
+    $or: [{ name: orgName }, { email: orgEmail }],
+  });
   if (existingOrg) throw new ApiError(400, "Organization already exists");
 
-  const tenantKey = `ORG-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
   const org = await Organization.create({
     name: orgName,
     email: orgEmail,
     type: type || "other",
-    tenantKey,
-    status: process.env.AUTO_APPROVE_ORG === "true" ? "active" : "pending",
+    password: adminPassword, 
+    address,
+    phone,
+    website,
   });
+
 
   const existingUser = await User.findOne({ email: adminEmail });
   if (existingUser) {
     existingUser.organization = org._id;
     existingUser.role = "orgAdmin";
     await existingUser.save({ validateBeforeSave: false });
-    await writeAudit({ req, user: existingUser, organization: org, action: "REGISTER_ORG", details: { info: "existing user became orgAdmin" } });
-    return res.status(201).json(new ApiResponse(201, { organization: org, user: existingUser }, "Organization created and admin assigned (existing user)"));
+
+    // Add admin to organization admins array
+    org.admins.push(existingUser._id);
+    await org.save();
+
+    await writeAudit({
+      req,
+      user: existingUser,
+      organization: org,
+      action: "REGISTER_ORG",
+      details: { info: "Existing user promoted to orgAdmin" },
+    });
+
+    return res
+      .status(201)
+      .json(new ApiResponse(201, { organization: org, user: existingUser }, "Organization created and existing user set as orgAdmin"));
   }
 
   const user = await User.create({
@@ -84,18 +101,35 @@ const registerOrganization = asyncHandler(async (req, res) => {
     organization: org._id,
   });
 
+  // Add this admin to the organization
+  org.admins.push(user._id);
+  await org.save();
+
   const safeUser = await User.findById(user._id).select("-password -refreshToken");
 
-  await writeAudit({ req, user: safeUser, organization: org, action: "REGISTER_ORG", details: { tenantKey } });
+  await writeAudit({
+    req,
+    user: safeUser,
+    organization: org,
+    action: "REGISTER_ORG",
+    details: { info: "Organization registered successfully" },
+  });
 
-  return res.status(201).json(new ApiResponse(201, { organization: org, user: safeUser }, "Organization registered successfully"));
+  
+  return res
+    .status(201)
+    .json(new ApiResponse(201, { organization: org, user: safeUser }, "Organization registered successfully"));
 });
+
+
 
 /**
  * Register user (join existing org) - invite flow OR self-join by orgId
  * POST /auth/register
  * body: { name, email, password, organizationId }
  */
+
+
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, organizationId } = req.body;
 
@@ -104,7 +138,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const org = await Organization.findById(organizationId);
-  if (!org || org.status !== "active") throw new ApiError(400, "Organization not available or not active");
+  if (!org) throw new ApiError(400, "Organization not available");
 
   const existedUser = await User.findOne({ email });
   if (existedUser) throw new ApiError(400, "User already exists");
@@ -124,10 +158,22 @@ const registerUser = asyncHandler(async (req, res) => {
   return res.status(201).json(new ApiResponse(201, safeUser, "User registered and joined organization"));
 });
 
+
+
+const loginOrganization = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) throw new ApiError(400, "Email and password required");
+
+  const org = await Organization.findOne({ email });
+  if (!org) throw new ApiError(401, "Invalid credentials");
+
+  if (org.password !== password) throw new ApiError(401, "Invalid credentials");
+
+  return res.status(200).json(new ApiResponse(200, org, "Organization logged in successfully"));
+});
+
 /**
  * Login
- * POST /auth/login
- * body: { email, password }
  */
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -164,7 +210,6 @@ const loginUser = asyncHandler(async (req, res) => {
 
 /**
  * Logout
- * POST /auth/logout
  */
 const logoutUser = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
@@ -299,4 +344,5 @@ export {
   changeCurrentPassword,
   getCurrentUser,
   assignIssuer,
+  loginOrganization,
 };
