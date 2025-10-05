@@ -19,8 +19,8 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["student", "issuer", "orgAdmin", "superAdmin"],
-      default: "student",
+      enum: ["member", "issuer", "orgAdmin", "superAdmin"],
+      default: "member",
     },
 
     organization: {
@@ -39,9 +39,12 @@ const userSchema = new mongoose.Schema(
     ],
 
     studentMeta: {
-      rollNo: { type: String },
-      course: { type: String },
-      branch: { type: String },
+        id: { type: String },          
+        category: { type: String },    
+        course: { type: String },      
+        branch: { type: String },      
+        organization: { type: String }, 
+        jobTitle: { type: String }, 
     },
 
     refreshToken: { type: String },
