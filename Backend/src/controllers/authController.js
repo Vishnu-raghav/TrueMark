@@ -254,6 +254,42 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, user, "Current user fetched"));
 });
 
+/**
+ * Assign issuer role to a user
+ * POST /auth/assign-issuer
+ * body: { userId }
+ */
+
+const assignIssuer = asyncHandler(async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) throw new ApiError(400, "User ID is required");
+
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  // Ensure issuer role can only be assigned within same organization
+  if (
+    req.user.role !== "superAdmin" &&
+    (!user.organization || String(user.organization) !== String(req.user.organization))
+  ) {
+    throw new ApiError(403, "You are not authorized to assign issuer for this user");
+  }
+
+  user.role = "issuer";
+  await user.save();
+
+  // Audit log
+  await writeAudit({
+    req,
+    user: req.user,
+    organization: req.user.organization,
+    action: "ASSIGN_ISSUER",
+    details: { assignedTo: user.email, userId: user._id },
+  });
+
+  return res.status(200).json(new ApiResponse(200, user, "Issuer role assigned successfully"));
+});
 export {
   registerOrganization,
   registerUser,
@@ -262,4 +298,5 @@ export {
   refreshAccessToken,
   changeCurrentPassword,
   getCurrentUser,
+  assignIssuer,
 };
