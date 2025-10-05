@@ -14,7 +14,7 @@ app.use(express.static("public"))
 app.use(cookieParser())
 
 // import routes
-import userRouter from "./routes/user.routes.js"
+import userRouter from "./routes/auth.routes.js"
 import certificateRouter from "./routes/certificates.routes.js"
 
 
@@ -22,6 +22,7 @@ import certificateRouter from "./routes/certificates.routes.js"
 app.use("/api/v1/users",userRouter)
 app.use("/api/v1/certificates",certificateRouter)
 app.use("/api/v1/verify",certificateRouter)
+
 
 export {app}
 
