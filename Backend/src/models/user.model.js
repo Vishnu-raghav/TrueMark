@@ -41,8 +41,7 @@ const userSchema = new mongoose.Schema(
     studentMeta: {
         id: { type: String },          
         category: { type: String },    
-        course: { type: String },      
-        branch: { type: String },      
+        course: { type: String },           
         organization: { type: String }, 
         jobTitle: { type: String }, 
     },
