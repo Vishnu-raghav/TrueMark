@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 
 const organizationSchema = new mongoose.Schema(
   {
-    // 🔹 Basic Info
     name: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -19,7 +18,6 @@ const organizationSchema = new mongoose.Schema(
     phone: { type: String },
     website: { type: String },
 
-    // 🔹 Members of this org
     users: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -27,7 +25,6 @@ const organizationSchema = new mongoose.Schema(
       },
     ],
 
-    // 🔹 Users who can issue certificates
     issuers: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -35,7 +32,6 @@ const organizationSchema = new mongoose.Schema(
       },
     ],
 
-    // 🔹 Certificates issued by org
     certificates: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -43,7 +39,7 @@ const organizationSchema = new mongoose.Schema(
       },
     ],
 
-    // 🔹 Admin (the one who registered this organization)
+    
     admin: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -55,25 +51,18 @@ const organizationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-//
-// 🔐 Hash password
-//
 organizationSchema.pre("save", async function (next) {
   if (!this.isModified("password") || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-//
-// 🔍 Check password
-//
+
 organizationSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-//
-// 🪪 Generate access token
-//
+
 organizationSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
@@ -88,9 +77,8 @@ organizationSchema.methods.generateAccessToken = function () {
   );
 };
 
-//
-// 🔁 Generate refresh token
-//
+//  Generate refresh token
+
 organizationSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     { _id: this._id },

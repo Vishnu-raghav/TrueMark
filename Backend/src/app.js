@@ -16,12 +16,14 @@ app.use(cookieParser())
 // import routes
 import userRouter from "./routes/auth.routes.js"
 import certificateRouter from "./routes/certificates.routes.js"
+import OrganizationRouter  from "./routes/org.routes.js"
 
 
 // routes
 app.use("/api/v1/users",userRouter)
 app.use("/api/v1/certificates",certificateRouter)
 app.use("/api/v1/verify",certificateRouter)
+app.use("/api/v1/organizations",OrganizationRouter)
 
 
 export {app}
