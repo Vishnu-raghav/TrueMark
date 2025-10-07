@@ -1,97 +1,29 @@
-// import { Router } from "express";
-// import {
-//   createCertificate,
-//   deleteCertificate,
-//   getCertificate,
-//   listCertificates
-// } from "../controllers/certificateController.js";
-
-// import { verifyCertificateController } from "../controllers/verifyCertificateController.js";
-// import { upload, optimizeImage } from "../middlewares/multer.middleware.js";
-// import { verifyOrgJWT } from "../middlewares/org.middleware.js";
-// import { verifyJWT } from "../middlewares/auth.middleware.js";
-// import { isAdmin, isIssuer, isMember } from "../middlewares/role.middleware.js";
-
-// const router = Router();
-
-// /**
-//  * VERIFY Certificate (Public)
-//  * GET /api/v1/certificates/verify/:certificateId
-//  */
-// router.get(
-//   "/verify/:certificateId",
-//   verifyCertificateController
-// );
-
-// /**
-//  * ISSUE Certificate
-//  * POST /api/v1/certificates/issue/:userId
-//  */
-// router.post(
-//   "/issue/:userId",
-//   verifyOrgJWT,
-//   isAdmin,
-//   upload.single("certificate"),
-//   optimizeImage,
-//   createCertificate
-// );
-
-// /**
-//  * GET My Certificates (Member only)
-//  * GET /api/v1/certificates/my
-//  */
-// router.get(
-//   "/my",
-//   verifyJWT,
-//   isMember,
-//   listCertificates
-// );
-
-// /**
-//  * GET Certificate by ID
-//  * GET /api/v1/certificates/:certificateId
-//  */
-// router.get(
-//   "/:certificateId",
-//   verifyJWT,
-//   getCertificate
-// );
-
-// /**
-//  * DELETE Certificate
-//  * DELETE /api/v1/certificates/:certificateId
-//  */
-// router.delete(
-//   "/:certificateId",
-//   verifyJWT,
-//   isAdmin,
-//   deleteCertificate
-// );
-
-// export default router;
 import { Router } from "express";
 import {
   createCertificate,
   deleteCertificate,
   getCertificate,
-  listCertificates
+  listCertificates,
+  listUserCertificates,
 } from "../controllers/certificateController.js";
 
 import { verifyCertificateController } from "../controllers/verifyCertificateController.js";
 import { upload, optimizeImage } from "../middlewares/multer.middleware.js";
 import { verifyOrgJWT } from "../middlewares/org.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { isAdmin, isIssuer, isMember } from "../middlewares/role.middleware.js";
+import { isAdmin } from "../middlewares/role.middleware.js";
 
 const router = Router();
 
 /**
- * VERIFY Certificate (Public)
+ * VERIFY Certificate (Public route)
+ * Anyone can verify a certificate using its ID.
  */
 router.get("/verify/:certificateId", verifyCertificateController);
 
 /**
- * ISSUE Certificate (Org admin only)
+ * ISSUE Certificate (Organization Admin only)
+ * Allows organization admins to issue certificates to users.
  */
 router.post(
   "/issue/:userId",
@@ -103,18 +35,27 @@ router.post(
 );
 
 /**
- * GET My Certificates (Member only)
+ * LIST Issued Certificates (Organization-level)
+ * Shows all certificates issued by the logged-in organization.
  */
-router.get("/my", verifyJWT, isMember, listCertificates);
+router.get("/issued", verifyOrgJWT, listCertificates);
 
 /**
- * GET Certificate by ID
+ * LIST User Certificates (User-level)
+ * Shows all certificates received by the logged-in user.
+ */
+router.get("/my", verifyJWT, listUserCertificates);
+
+/**
+ * GET Certificate by ID (User or Org)
+ * Fetch a specific certificate by its ID.
  */
 router.get("/:certificateId", verifyJWT, getCertificate);
 
 /**
  * DELETE Certificate (Admin only)
+ * Delete a certificate — accessible only to organization admins.
  */
-router.delete("/:certificateId", verifyJWT, isAdmin, deleteCertificate);
+router.delete("/:certificateId", verifyOrgJWT, isAdmin, deleteCertificate);
 
 export default router;

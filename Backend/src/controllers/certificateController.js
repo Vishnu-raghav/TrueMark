@@ -29,7 +29,8 @@ const writeAudit = async ({ req, user = null, organization = null, action, detai
 
 /**
  * ISSUE Certificate
- */const createCertificate = asyncHandler(async (req, res) => {
+ */
+const createCertificate = asyncHandler(async (req, res) => {
   const { title, description, expiryDate, metaData } = req.body;
   const recipientId = req.params.userId; // URL se le rahe hain
 
@@ -147,4 +148,21 @@ const listCertificates = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, certificates, "Certificates list fetched successfully"));
 });
 
-export { createCertificate, deleteCertificate, getCertificate, listCertificates };
+const listUserCertificates = asyncHandler(async (req, res) => {
+  const certificates = await Certificate.find({ recipient: req.user._id })
+    .populate("issuedBy", "name email") // organization info
+    .sort({ issueDate: -1 }); // latest first
+
+  if (!certificates.length) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], "No certificates found for this user"));
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, certificates, "User certificates fetched successfully"));
+});
+
+
+export { createCertificate, deleteCertificate, getCertificate, listCertificates, listUserCertificates };

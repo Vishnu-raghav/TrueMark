@@ -89,13 +89,14 @@ const registerOrganization = asyncHandler(async (req, res) => {
 
 /**
  * Login organization
- */const loginOrganization = asyncHandler(async (req, res) => {
+*/
+
+const loginOrganization = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) throw new ApiError(400, "Email and password required");
 
   let org = await Organization.findOne({ email }).select("+password +refreshToken");
 
-  // Agar organization email match nahi hota, admin email check karo
   if (!org) {
     const adminUser = await User.findOne({ email, role: "orgAdmin" }).select("+password");
     if (!adminUser) throw new ApiError(401, "Invalid credentials");
@@ -106,7 +107,7 @@ const registerOrganization = asyncHandler(async (req, res) => {
     org = await Organization.findById(adminUser.organization).select("+password +refreshToken");
     if (!org) throw new ApiError(401, "Organization not found for admin");
 
-    // Yaha se normal org login flow use karo
+    
   } else {
     const isMatch = await org.isPasswordCorrect(password);
     if (!isMatch) throw new ApiError(401, "Invalid credentials");
