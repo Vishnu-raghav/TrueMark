@@ -8,7 +8,7 @@ import {
   logoutOrganization
 } from "../controllers/organizationController.js";
 
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyOrgJWT } from "../middlewares/org.middleware.js";
 import { isAdmin } from "../middlewares/role.middleware.js";
 
 const router = Router();
@@ -19,8 +19,8 @@ router.post("/org-login", loginOrganization);
 
 router.post("/refresh-token", refreshOrgAccessToken);
 
-router.post("/org-logout", verifyJWT, logoutOrganization);
+router.post("/org-logout", verifyOrgJWT, logoutOrganization);
 
-router.post("/assign-role", verifyJWT, isAdmin, assignRole);
+router.post("/assign-role", verifyOrgJWT, isAdmin, assignRole);
 
 export default router;
