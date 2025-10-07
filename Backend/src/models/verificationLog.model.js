@@ -33,7 +33,7 @@ const verificationLogSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["valid", "revoked", "expired"],
+      enum: ["active", "revoked", "expired"],
       required: true,
     },
 
