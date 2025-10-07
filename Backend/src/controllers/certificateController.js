@@ -29,9 +29,9 @@ const writeAudit = async ({ req, user = null, organization = null, action, detai
 
 /**
  * ISSUE Certificate
- */
-const createCertificate = asyncHandler(async (req, res) => {
-  const { title, description, recipientId, expiryDate, metaData } = req.body;
+ */const createCertificate = asyncHandler(async (req, res) => {
+  const { title, description, expiryDate, metaData } = req.body;
+  const recipientId = req.params.userId; // URL se le rahe hain
 
   if (!title || !recipientId) {
     throw new ApiError(400, "Title and recipientId are required");
@@ -50,7 +50,7 @@ const createCertificate = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to upload certificate file");
   }
 
-  const certificateId = nanoid(8); 
+  const certificateId = nanoid(8);
 
   const dataToHash = JSON.stringify({
     title,
@@ -86,6 +86,7 @@ const createCertificate = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, certificate, "Certificate issued successfully"));
 });
+
 
 /**
  * DELETE Certificate

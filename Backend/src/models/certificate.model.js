@@ -32,13 +32,11 @@ const certificateSchema = new mongoose.Schema(
     issuedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
-      required: true,
     },
 
     template: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CertificateTemplate",
-      required: true,
     },
 
     verificationHash: { type: String, required: true },
