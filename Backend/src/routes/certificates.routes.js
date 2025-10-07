@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { 
+import {
   createCertificate,
   deleteCertificate,
   getCertificate,
@@ -8,10 +8,20 @@ import {
 
 import { verifyCertificateController } from "../controllers/verifyCertificateController.js";
 import { upload, optimizeImage } from "../middlewares/multer.middleware.js";
+import { verifyOrgJWT } from "../middlewares/org.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { isAdmin, isIssuer, isMember } from "../middlewares/role.middleware.js";
 
 const router = Router();
+
+/**
+ * VERIFY Certificate (Public)
+ * GET /api/v1/certificates/verify/:certificateId
+ */
+router.get(
+  "/verify/:certificateId",
+  verifyCertificateController
+);
 
 /**
  * ISSUE Certificate
@@ -19,7 +29,7 @@ const router = Router();
  */
 router.post(
   "/issue/:userId",
-  verifyJWT,
+  verifyOrgJWT,
   isIssuer,
   upload.single("certificate"),
   optimizeImage,
@@ -27,7 +37,7 @@ router.post(
 );
 
 /**
- * GET My Certificates
+ * GET My Certificates (Member only)
  * GET /api/v1/certificates/my
  */
 router.get(
@@ -37,23 +47,25 @@ router.get(
   listCertificates
 );
 
+/**
+ * GET Certificate by ID
+ * GET /api/v1/certificates/:certificateId
+ */
 router.get(
   "/:certificateId",
   verifyJWT,
   getCertificate
 );
 
+/**
+ * DELETE Certificate
+ * DELETE /api/v1/certificates/:certificateId
+ */
 router.delete(
   "/:certificateId",
   verifyJWT,
   isAdmin,
   deleteCertificate
-);
-
-
-router.get(
-  "/verify/:certificateId",
-  verifyCertificateController
 );
 
 export default router;
