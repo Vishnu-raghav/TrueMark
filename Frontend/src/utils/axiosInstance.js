@@ -1,54 +1,46 @@
 import axios from "axios";
 import { store } from "../app/store";
-import { logout, refreshToken } from "../features/auth/authSlice.js";
+import { logoutUser } from "../features/auth/authslice.js";
 
+// Create base instance
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // your backend base URL
-  withCredentials: true,
+  baseURL: import.meta.env.VITE_API_URL, 
+  withCredentials: true, // cookies automatically sent
 });
 
-// Request Interceptor → add access token
-axiosInstance.interceptors.request.use((config) => {
-  const accessToken = localStorage.getItem("accessToken");
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
-  return config;
-});
+// Request interceptor (no token in header needed)
+axiosInstance.interceptors.request.use(
+  (config) => config,
+  (error) => Promise.reject(error)
+);
 
-// Response Interceptor → handle token refresh
+// Response Interceptor → handle 401
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // if token expired
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const refreshTokenValue = localStorage.getItem("refreshToken");
+        // Refresh token call → cookie sent automatically
         const res = await axios.post(
           `${import.meta.env.VITE_API_URL}/auth/refresh-token`,
           {},
-          {
-            headers: { Authorization: `Bearer ${refreshTokenValue}` },
-            withCredentials: true,
-          }
+          { withCredentials: true }
         );
 
         const newAccessToken = res.data.data.accessToken;
-        localStorage.setItem("accessToken", newAccessToken);
 
-        // Redux store me bhi update karna chahiye
-        store.dispatch(refreshToken(newAccessToken));
-
-        // Retry original request
+        // Retry original request with new token in header (optional)
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return axiosInstance(originalRequest);
       } catch (err) {
         console.error("Token refresh failed:", err);
-        store.dispatch(logout());
+
+        // Logout user if refresh fails
+        store.dispatch(logoutUser());
         return Promise.reject(err);
       }
     }
