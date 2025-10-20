@@ -66,10 +66,17 @@ export const verifyCertificate = createAsyncThunk(
   async (id, thunkAPI) => {
     try {
       const res = await certificateService.verifyCertificate(id);
-      return res.data.certificate || res.data.data?.certificate || res.data
+      const data = res.data.data || {}
+console.log("Verifying ID:", id)
+       if (!data.valid || !data.certificate) {
+        return thunkAPI.rejectWithValue("Certificate not found or invalid");
+      }
+
+      return data.certificate;
     } catch (error) {
-      if (error.isAuthError) thunkAPI.dispatch(logoutUser());
-      return thunkAPI.rejectWithValue(error.response?.data?.message || "Verification failed");
+       return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Verification failed"
+      );
     }
   }
 );

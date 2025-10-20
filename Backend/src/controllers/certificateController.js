@@ -27,37 +27,92 @@ const writeAudit = async ({ req, user = null, organization = null, action, detai
   }
 };
 
-/**
- * ISSUE Certificate
- */
+// /**
+//  * ISSUE Certificate
+//  */
+// const createCertificate = asyncHandler(async (req, res) => {
+//   const { title, description, expiryDate, metaData } = req.body;
+//   const recipientId = req.params.userId; // URL se le rahe hain
+
+//   if (!title || !recipientId) {
+//     throw new ApiError(400, "Title and recipientId are required");
+//   }
+
+//   const recipient = await User.findById(recipientId);
+//   if (!recipient) throw new ApiError(404, "Recipient not found");
+
+//   const certificateFile = req.file;
+//   if (!certificateFile) {
+//     throw new ApiError(400, "Certificate file is required");
+//   }
+
+//   const uploadedFile = await uploadOnCloudinary(certificateFile.path);
+//   if (!uploadedFile?.secure_url) {
+//     throw new ApiError(500, "Failed to upload certificate file");
+//   }
+
+//   const certificateId = nanoid(8);
+
+//   const dataToHash = JSON.stringify({
+//     title,
+//     recipient: recipient._id.toString(),
+//     issuedBy: req.user.organization.toString(),
+//     issueDate: new Date().toISOString(),
+//   });
+
+//   const verificationHash = generateHMAC(dataToHash);
+
+//   const certificate = await Certificate.create({
+//     title,
+//     description,
+//     certificateId,
+//     verificationHash,
+//     issueDate: new Date(),
+//     expiryDate,
+//     recipient: recipient._id,
+//     issuedBy: req.user.organization,
+//     fileUrl: uploadedFile.secure_url,
+//     metaData,
+//   });
+
+//   await writeAudit({
+//     req,
+//     user: req.user,
+//     organization: req.user.organization,
+//     action: "ISSUE_CERTIFICATE",
+//     details: { certificateId, recipient: recipient.email },
+//   });
+
+//   return res
+//     .status(201)
+//     .json(new ApiResponse(201, certificate, "Certificate issued successfully"));
+// });
+
+
 const createCertificate = asyncHandler(async (req, res) => {
   const { title, description, expiryDate, metaData } = req.body;
-  const recipientId = req.params.userId; // URL se le rahe hain
+  const recipientId = req.params.userId;
 
-  if (!title || !recipientId) {
-    throw new ApiError(400, "Title and recipientId are required");
-  }
+  if (!title || !recipientId) throw new ApiError(400, "Title and recipientId are required");
 
   const recipient = await User.findById(recipientId);
   if (!recipient) throw new ApiError(404, "Recipient not found");
 
   const certificateFile = req.file;
-  if (!certificateFile) {
-    throw new ApiError(400, "Certificate file is required");
-  }
+  if (!certificateFile) throw new ApiError(400, "Certificate file is required");
 
   const uploadedFile = await uploadOnCloudinary(certificateFile.path);
-  if (!uploadedFile?.secure_url) {
-    throw new ApiError(500, "Failed to upload certificate file");
-  }
+  if (!uploadedFile?.secure_url) throw new ApiError(500, "Failed to upload certificate file");
 
   const certificateId = nanoid(8);
+
+  const issueDate = new Date().toISOString(); // 🔑 single source of truth
 
   const dataToHash = JSON.stringify({
     title,
     recipient: recipient._id.toString(),
     issuedBy: req.user.organization.toString(),
-    issueDate: new Date().toISOString(),
+    issueDate,
   });
 
   const verificationHash = generateHMAC(dataToHash);
@@ -67,7 +122,7 @@ const createCertificate = asyncHandler(async (req, res) => {
     description,
     certificateId,
     verificationHash,
-    issueDate: new Date(),
+    issueDate,
     expiryDate,
     recipient: recipient._id,
     issuedBy: req.user.organization,
@@ -87,8 +142,6 @@ const createCertificate = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, certificate, "Certificate issued successfully"));
 });
-
-
 /**
  * DELETE Certificate
  */
