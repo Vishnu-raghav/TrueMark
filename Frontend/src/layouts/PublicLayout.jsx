@@ -9,7 +9,7 @@ export default function PublicLayout() {
       <Header />
 
       {/* Main Content */}
-      <main className="flex-1 pt-[140px] w-full px-6">
+      <main className="flex-1 w-full px-6">
         <div className="max-w-7xl mx-auto w-full">
           <Outlet />
         </div>
