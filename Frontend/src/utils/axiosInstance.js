@@ -1,20 +1,19 @@
 import axios from "axios";
-import { store } from "../app/store";
-import { logoutUser } from "../features/auth/authslice.js";
 
-// Create base instance
+// Create base axios instance
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, 
+  baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true, // cookies automatically sent
 });
 
-// Request interceptor (no token in header needed)
+// Request interceptor (optional)
 axiosInstance.interceptors.request.use(
   (config) => config,
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor → handle 401
+// Response interceptor → token refresh logic
+// But we won't dispatch directly from here to avoid circular dependency
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -24,7 +23,6 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Refresh token call → cookie sent automatically
         const res = await axios.post(
           `${import.meta.env.VITE_API_URL}/auth/refresh-token`,
           {},
@@ -32,15 +30,13 @@ axiosInstance.interceptors.response.use(
         );
 
         const newAccessToken = res.data.data.accessToken;
-
-        // Retry original request with new token in header (optional)
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return axiosInstance(originalRequest);
       } catch (err) {
+        // Cannot call store.dispatch here to logout
         console.error("Token refresh failed:", err);
-
-        // Logout user if refresh fails
-        store.dispatch(logoutUser());
+        // Return a special error so thunk can handle logout
+        err.isAuthError = true;
         return Promise.reject(err);
       }
     }

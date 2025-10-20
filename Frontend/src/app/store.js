@@ -9,5 +9,5 @@ export const store = configureStore({
     certificate: certificateReducer,
     organization: organizationReducer,
   },
-  devTools: true, 
+//   devTools: true, 
 });
