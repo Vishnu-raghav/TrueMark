@@ -40,24 +40,51 @@ const generateAccessAndRefreshToken = async (user) => {
     throw new ApiError(500, "Error generating tokens");
   }
 };
+
 /**
- * Register user (join existing org)
+ * Register user (ONLY for members - without organization)
  */
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, organizationId } = req.body;
-  if (![name, email, password, organizationId].every(Boolean)) {
-    throw new ApiError(400, "All fields are required");
+  const { firstName, lastName, email, password, phone, dateOfBirth, educationLevel } = req.body;
+  
+  // Required fields check - only essential fields for member registration
+  if (!firstName || !lastName || !email || !password) {
+    throw new ApiError(400, "First name, last name, email and password are required");
   }
 
+  // Check if user already exists
   const existedUser = await User.findOne({ email });
-  if (existedUser) throw new ApiError(400, "User already exists");
+  if (existedUser) {
+    throw new ApiError(400, "User with this email already exists");
+  }
 
-  const user = await User.create({ name, email, password, role: "member", organization: organizationId });
+  // Create member without organization
+  const user = await User.create({ 
+    name: `${firstName} ${lastName}`,
+    email, 
+    password, 
+    role: "member", // ✅ ALWAYS member role for public registration
+    organization: null, // ✅ No organization for new members
+    phone: phone || "",
+    dateOfBirth: dateOfBirth || null,
+    educationLevel: educationLevel || ""
+  });
+
   const safeUser = await User.findById(user._id).select("-password -refreshToken");
 
-  await writeAudit({ req, user: safeUser, action: "REGISTER_USER", details: { role: "member" } });
+  await writeAudit({ 
+    req, 
+    user: safeUser, 
+    action: "REGISTER_USER", 
+    details: { 
+      role: "member",
+      hasOrganization: false 
+    } 
+  });
 
-  return res.status(201).json(new ApiResponse(201, safeUser, "User registered successfully"));
+  return res.status(201).json(
+    new ApiResponse(201, { user: safeUser }, "User registered successfully")
+  );
 });
 
 /**
@@ -113,8 +140,9 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, user, "Fetched current user"));
 });
 
-
-
+/**
+ * Refresh Access Token
+ */
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
   if (!incomingRefreshToken) throw new ApiError(401, "No refresh token provided");
@@ -151,15 +179,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-
-
-// /**
-//  * Change current password
-//  * POST /auth/change-password
-//  * body: { oldPassword, newPassword, confirmPassword }
-//  * user must be authenticated (req.user available)
-//  */
-
+/**
+ * Change current password
+ */
 const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword, confirmPassword } = req.body;
   if (!oldPassword || !newPassword || !confirmPassword) throw new ApiError(400, "All fields required");
@@ -180,5 +202,37 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, {}, "Password updated"));
 });
 
+/**
+ * Update user profile (for members)
+ */
+const updateUserProfile = asyncHandler(async (req, res) => {
+  const { phone, dateOfBirth, educationLevel } = req.body;
+  
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        ...(phone && { phone }),
+        ...(dateOfBirth && { dateOfBirth }),
+        ...(educationLevel && { educationLevel })
+      }
+    },
+    { new: true }
+  ).select("-password -refreshToken");
 
-export { registerUser, loginUser, logoutUser, getCurrentUser, refreshAccessToken, changeCurrentPassword };
+  await writeAudit({ req, user: user._id, action: "UPDATE_PROFILE" });
+
+  return res.status(200).json(
+    new ApiResponse(200, { user }, "Profile updated successfully")
+  );
+});
+
+export { 
+  registerUser, 
+  loginUser, 
+  logoutUser, 
+  getCurrentUser, 
+  refreshAccessToken, 
+  changeCurrentPassword,
+  updateUserProfile 
+};
