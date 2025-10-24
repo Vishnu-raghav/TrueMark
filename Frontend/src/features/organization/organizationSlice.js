@@ -33,7 +33,7 @@ export const refreshOrgToken = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const res = await organizationService.refreshToken();
-      return res.data.accessToken;
+      return res.data.accessToken || res.data.data?.accessToken;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || "Token refresh failed");
     }
@@ -66,6 +66,19 @@ export const assignRole = createAsyncThunk(
   }
 );
 
+// ✅ NEW: GET ORGANIZATION PROFILE
+export const getOrganizationProfile = createAsyncThunk(
+  "organization/getOrganizationProfile",
+  async (_, thunkAPI) => {
+    try {
+      const res = await organizationService.getProfile();
+      return res.data.organization || res.data.data?.organization;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || "Failed to get organization profile");
+    }
+  }
+);
+
 const initialState = {
   organization: null,
   accessToken: null,
@@ -78,7 +91,20 @@ const initialState = {
 const organizationSlice = createSlice({
   name: "organization",
   initialState,
-  reducers: {},
+  reducers: {
+    // ✅ Reset state utility
+    resetOrgState: (state) => {
+      state.isError = false;
+      state.isSuccess = false;
+      state.isLoading = false;
+      state.message = "";
+    },
+    // ✅ Clear organization data
+    clearOrganization: (state) => {
+      state.organization = null;
+      state.accessToken = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
       // Register
@@ -115,11 +141,23 @@ const organizationSlice = createSlice({
       })
 
       // Refresh token
+      .addCase(refreshOrgToken.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(refreshOrgToken.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.accessToken = action.payload;
+      })
+      .addCase(refreshOrgToken.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
       })
 
       // Logout
+      .addCase(logoutOrganization.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(logoutOrganization.fulfilled, (state) => {
         state.organization = null;
         state.accessToken = null;
@@ -127,6 +165,11 @@ const organizationSlice = createSlice({
         state.isSuccess = true;
         state.isLoading = false;
         state.message = "Logout successful";
+      })
+      .addCase(logoutOrganization.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
       })
 
       // Assign Role
@@ -142,8 +185,24 @@ const organizationSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
+      })
+
+      // ✅ NEW: Get Organization Profile
+      .addCase(getOrganizationProfile.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getOrganizationProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.organization = action.payload;
+      })
+      .addCase(getOrganizationProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
       });
   },
 });
 
+export const { resetOrgState, clearOrganization } = organizationSlice.actions;
 export default organizationSlice.reducer;

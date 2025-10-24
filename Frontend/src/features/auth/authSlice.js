@@ -51,6 +51,26 @@ export const refreshAccessToken = createAsyncThunk("auth/refreshAccessToken", as
   }
 });
 
+// ✅ UPDATE USER PROFILE
+export const updateUserProfile = createAsyncThunk("auth/updateUserProfile", async (data, thunkAPI) => {
+  try {
+    const res = await authService.updateUserProfile(data);
+    return res.data.user || res.data.data?.user;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data?.message || "Profile update failed");
+  }
+});
+
+// ✅ CHANGE PASSWORD
+export const changePassword = createAsyncThunk("auth/changePassword", async (data, thunkAPI) => {
+  try {
+    const res = await authService.changePassword(data);
+    return res.data.message;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data?.message || "Password change failed");
+  }
+});
+
 const initialState = {
   user: null,
   accessToken: null,
@@ -63,7 +83,20 @@ const initialState = {
 const authSlice = createSlice({
   name: "auth",
   initialState,
-  reducers: {},
+  reducers: {
+    // ✅ Reset state utility
+    resetAuthState: (state) => {
+      state.isError = false;
+      state.isSuccess = false;
+      state.isLoading = false;
+      state.message = "";
+    },
+    // ✅ Clear user data on manual logout
+    clearUser: (state) => {
+      state.user = null;
+      state.accessToken = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
       // REGISTER
@@ -118,29 +151,56 @@ const authSlice = createSlice({
       // LOGOUT
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
+        state.accessToken = null;
         state.isSuccess = true;
         state.message = "Logout Successful";
+      })
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.isError = true;
+        state.message = action.payload;
       })
 
       // REFRESH TOKEN
       .addCase(refreshAccessToken.fulfilled, (state, action) => {
         state.accessToken = action.payload;
+      })
+      .addCase(refreshAccessToken.rejected, (state, action) => {
+        state.isError = true;
+        state.message = action.payload;
+      })
+
+      // ✅ UPDATE USER PROFILE
+      .addCase(updateUserProfile.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.user = action.payload; // Update user data
+        state.message = "Profile updated successfully";
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+
+      // ✅ CHANGE PASSWORD
+      .addCase(changePassword.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(changePassword.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.message = action.payload || "Password changed successfully";
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
       });
   },
 });
 
+export const { resetAuthState, clearUser } = authSlice.actions;
 export default authSlice.reducer;
-/* Additional functionalities to be implemented in the future:
-
--> update user details  
--> get user details
--> list all users
--> delete user  
--> update user password
--> reset user password
-
--> get user by id
--> get user by name
--> get user by email
--> get user by role 
-*/  

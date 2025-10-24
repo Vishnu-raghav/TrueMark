@@ -1,15 +1,18 @@
 import axiosInstance from "../../utils/axiosInstance";
 
 const organizationService = {
-  register: async (data) => axiosInstance.post("/organization/org-register", data),
-  login: async (data) => axiosInstance.post("/organization/org-login", data),
-  refreshToken: async () => axiosInstance.post("/organization/refresh-token"),
-  logout: async () => axiosInstance.post("/organization/org-logout"),
-  assignRole: async (data) => axiosInstance.post("/organization/assign-role", data),
+  // ✅ Updated routes according to backend
+  register: async (data) => axiosInstance.post("/organizations/register", data),
+  login: async (data) => axiosInstance.post("/organizations/login", data),
+  refreshToken: async () => axiosInstance.post("/organizations/refresh-token"),
+  logout: async () => axiosInstance.post("/organizations/logout"),
+  assignRole: async (data) => axiosInstance.post("/organizations/assign-role", data),
+  
+  // ✅ NEW: Get organization profile
+  getProfile: async () => axiosInstance.get("/organizations/profile"),
 };
 
 export default organizationService;
-
 
 /* Additional functionalities to be implemented in the future:  
 

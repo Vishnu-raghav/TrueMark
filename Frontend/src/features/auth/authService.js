@@ -6,19 +6,10 @@ const authService = {
   getCurrentUser: async () => axiosInstance.get("/auth/getCurrentUser"),
   logoutUser: async () => axiosInstance.post("/auth/logout"),
   refreshAccessToken: async () => axiosInstance.post("/auth/refreshToken"),
+  
+  // ✅ NEW: Profile management
+  updateUserProfile: async (data) => axiosInstance.put("/auth/profile", data),
+  changePassword: async (data) => axiosInstance.post("/auth/changePassword", data),
 };
 
 export default authService;
-/* Additional functionalities to be implemented in the future:
-
--> update user details  
--> get user details
--> list all users
--> delete user
--> update user password
--> reset user password
--> get user by id
--> get user by name
--> get user by email
--> get user by role 
-*/
