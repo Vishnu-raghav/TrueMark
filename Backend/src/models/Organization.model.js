@@ -14,35 +14,58 @@ const organizationSchema = new mongoose.Schema(
       default: "other",
     },
 
-    address: { type: String },
-    phone: { type: String },
-    website: { type: String },
+    address: { type: String, default: "" },
+    phone: { type: String, default: "" },
+    website: { type: String, default: "" },
 
-    users: [
-      {
+    // ✅ Better user management
+    members: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
+
+    staff: [{
+      user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
-    ],
-
-    issuers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+      role: {
+        type: String,
+        enum: ["issuer", "orgAdmin"],
+        default: "issuer"
       },
-    ],
+      assignedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
 
-    certificates: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Certificate",
-      },
-    ],
+    certificates: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Certificate",
+    }],
 
-    
     admin: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: true
+    },
+
+    // ✅ New fields for better organization management
+    status: {
+      type: String,
+      enum: ["pending", "active", "suspended", "rejected"],
+      default: "pending"
+    },
+
+    description: { type: String, default: "" },
+    
+    logo: { type: String, default: "" },
+
+    settings: {
+      autoApproveCertificates: { type: Boolean, default: false },
+      allowMemberRegistration: { type: Boolean, default: true },
+      maxUsers: { type: Number, default: 1000 }
     },
 
     refreshToken: { type: String },
@@ -50,18 +73,19 @@ const organizationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Password Hash
 organizationSchema.pre("save", async function (next) {
   if (!this.isModified("password") || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-
+// Password Check
 organizationSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-
+// JWT Tokens
 organizationSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
@@ -75,8 +99,6 @@ organizationSchema.methods.generateAccessToken = function () {
     { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
   );
 };
-
-//  Generate refresh token
 
 organizationSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
