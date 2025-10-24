@@ -66,7 +66,7 @@ import MemberLayout from "./layouts/MemberLayout";
 import Home from "./pages/public/Home";
 import About from "./pages/public/About";
 import Contact from "./pages/public/Contact";
-import Pricing from "./pages/public/Pricing";
+import Pricing from "./pages/public/Pricing"
 import Unauthorized from "./pages/public/Unauthorized";
 
 // Auth Pages
