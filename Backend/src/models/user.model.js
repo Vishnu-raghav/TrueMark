@@ -26,8 +26,10 @@ const userSchema = new mongoose.Schema(
     organization: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
+      default: null, // ✅ Allow null for members
       required: function () {
-        return this.role !== "superAdmin"; 
+        // ✅ Only require for issuer and orgAdmin roles
+        return ["issuer", "orgAdmin"].includes(this.role);
       },
     },
 
@@ -39,11 +41,28 @@ const userSchema = new mongoose.Schema(
     ],
 
     studentMeta: {
-        id: { type: String },          
-        category: { type: String },    
-        course: { type: String },           
-        organization: { type: String }, 
-        jobTitle: { type: String }, 
+      id: { type: String },          
+      category: { type: String },    
+      course: { type: String },           
+      organization: { type: String }, 
+      jobTitle: { type: String }, 
+    },
+
+    // ✅ New fields for better member management
+    profileStatus: {
+      type: String,
+      enum: ["pending", "active", "suspended"],
+      default: "active"
+    },
+
+    phone: { type: String, default: "" },
+    
+    dateOfBirth: { type: Date, default: null },
+    
+    educationLevel: { 
+      type: String, 
+      enum: ["High School", "Associate Degree", "Bachelor's Degree", "Master's Degree", "Doctorate", "Diploma", "Certificate", "Other", ""],
+      default: ""
     },
 
     refreshToken: { type: String },
