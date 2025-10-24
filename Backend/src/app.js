@@ -20,7 +20,7 @@ import OrganizationRouter  from "./routes/org.routes.js"
 
 
 // routes
-app.use("/api/v1/users",userRouter)
+app.use("/api/v1/auth",userRouter)
 app.use("/api/v1/certificates",certificateRouter)
 app.use("/api/v1/verify",certificateRouter)
 app.use("/api/v1/organizations",OrganizationRouter)
