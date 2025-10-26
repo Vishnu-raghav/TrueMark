@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Building, User, Mail, Lock, ArrowRight, Shield, Zap, Globe, Award, CheckCircle, Star, Users } from "lucide-react";
+import { Eye, EyeOff, Building, User, Mail, Lock, ArrowRight, Shield } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../../features/auth/authslice.js";
 import { loginOrganization } from "../../features/organization/organizationSlice.js";
@@ -58,6 +58,7 @@ export default function SignIn() {
     if (!validateForm()) return;
     
     setIsLoading(true);
+    setErrors({}); // Clear previous errors
     
     try {
       const credentials = {
@@ -65,16 +66,18 @@ export default function SignIn() {
         password: formData.password,
       };
 
-      let result;
+      console.log("Attempting login as:", userType, credentials);
       
       if (userType === "organization") {
-        result = await dispatch(loginOrganization(credentials)).unwrap();
+        const result = await dispatch(loginOrganization(credentials)).unwrap();
+        console.log("Organization login success:", result);
         // Redirect to organization dashboard
         setTimeout(() => {
           navigate("/org/dashboard");
         }, 1000);
       } else {
-        result = await dispatch(loginUser(credentials)).unwrap();
+        const result = await dispatch(loginUser(credentials)).unwrap();
+        console.log("Member login success:", result);
         // Redirect to member dashboard
         setTimeout(() => {
           navigate("/member/dashboard");
@@ -85,15 +88,21 @@ export default function SignIn() {
       console.error("Login failed:", error);
       
       // Better error handling
-      if (error.includes("Invalid credentials") || error.includes("Invalid email or password")) {
-        setErrors({ submit: "Invalid email or password. Please try again." });
-      } else if (error.includes("not found")) {
-        setErrors({ submit: "No account found with this email address." });
-      } else if (error.includes("suspended") || error.includes("inactive")) {
-        setErrors({ submit: "Your account is currently inactive. Please contact support." });
-      } else {
-        setErrors({ submit: error });
+      let errorMessage = "Login failed. Please try again.";
+      
+      if (typeof error === 'string') {
+        if (error.includes("Invalid credentials") || error.includes("Invalid email or password")) {
+          errorMessage = "Invalid email or password. Please try again.";
+        } else if (error.includes("not found")) {
+          errorMessage = "No account found with this email address.";
+        } else if (error.includes("suspended") || error.includes("inactive")) {
+          errorMessage = "Your account is currently inactive. Please contact support.";
+        } else {
+          errorMessage = error;
+        }
       }
+      
+      setErrors({ submit: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -102,9 +111,6 @@ export default function SignIn() {
   // Get current loading state based on user type
   const currentLoading = isLoading || 
     (userType === "organization" ? orgState.isLoading : authState.isLoading);
-
-  // Get current error message
-  const currentError = userType === "organization" ? orgState.message : authState.message;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
@@ -149,7 +155,7 @@ export default function SignIn() {
                     {userType === "organization" ? "Organization Benefits" : "Member Benefits"}
                   </h3>
                   <div className="space-y-4">
-                    {userType === "organization" ? [
+                    {(userType === "organization" ? [
                       { icon: "🏢", text: "Issue verified certificates" },
                       { icon: "🔒", text: "Military-grade security" },
                       { icon: "⚡", text: "Instant verification" },
@@ -163,7 +169,7 @@ export default function SignIn() {
                       { icon: "🌐", text: "Global credential recognition" },
                       { icon: "📊", text: "Track achievements" },
                       { icon: "🔒", text: "Secure storage" },
-                    ].map((benefit, index) => (
+                    ]).map((benefit, index) => (
                       <div key={index} className="flex items-center space-x-3">
                         <span className="text-lg">{benefit.icon}</span>
                         <span className="text-sm text-blue-100">{benefit.text}</span>
@@ -274,17 +280,17 @@ export default function SignIn() {
                     Password *
                   </label>
                   <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 pr-12 ${
+                      className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${
                         errors.password ? "border-red-500" : "border-gray-300"
                       }`}
                       placeholder="Enter your password"
                     />
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
@@ -313,9 +319,9 @@ export default function SignIn() {
                   </div>
 
                   <div className="text-sm">
-                    <a href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                    <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
                       Forgot password?
-                    </a>
+                    </Link>
                   </div>
                 </div>
 
