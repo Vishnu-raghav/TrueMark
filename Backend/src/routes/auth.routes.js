@@ -6,7 +6,7 @@ import {
   registerUser,
   changeCurrentPassword,
   getCurrentUser,
-  updateUserProfile
+  updateUserProfile,
 } from "../controllers/authController.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { listUserCertificates } from "../controllers/certificateController.js";

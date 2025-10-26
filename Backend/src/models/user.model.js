@@ -4,18 +4,24 @@ import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
+    name: { 
+      type: String, 
+      required: true,
+      trim: true 
+    },
 
-    email: { type: String, required: true, unique: true },
+    email: { 
+      type: String, 
+      required: true, 
+      unique: true,
+      lowercase: true,
+      trim: true
+    },
 
     password: {
       type: String,
-      required: function () {
-        return !this.googleId;
-      },
+      required: true,
     },
-
-    googleId: { type: String, default: null },
 
     role: {
       type: String,
@@ -26,77 +32,77 @@ const userSchema = new mongoose.Schema(
     organization: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
-      default: null, // ✅ Allow null for members
-      required: function () {
-        // ✅ Only require for issuer and orgAdmin roles
-        return ["issuer", "orgAdmin"].includes(this.role);
-      },
+      default: null,
     },
 
-    certificates: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Certificate",
-      },
-    ],
+    certificates: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Certificate",
+    }],
 
-    studentMeta: {
-      id: { type: String },          
-      category: { type: String },    
-      course: { type: String },           
-      organization: { type: String }, 
-      jobTitle: { type: String }, 
+    phone: { 
+      type: String, 
+      default: "" 
     },
-
-    // ✅ New fields for better member management
-    profileStatus: {
-      type: String,
-      enum: ["pending", "active", "suspended"],
-      default: "active"
-    },
-
-    phone: { type: String, default: "" },
     
-    dateOfBirth: { type: Date, default: null },
+    dateOfBirth: { 
+      type: Date, 
+      default: null 
+    },
     
     educationLevel: { 
       type: String, 
-      enum: ["High School", "Associate Degree", "Bachelor's Degree", "Master's Degree", "Doctorate", "Diploma", "Certificate", "Other", ""],
+      enum: [
+        "High School", 
+        "Associate Degree", 
+        "Bachelor's Degree", 
+        "Master's Degree", 
+        "Doctorate", 
+        "Diploma", 
+        "Certificate", 
+        "Other", 
+        ""
+      ],
       default: ""
     },
 
-    refreshToken: { type: String },
+    refreshToken: { 
+      type: String 
+    }
+
   },
-  { timestamps: true }
+  { 
+    timestamps: true 
+  }
 );
 
-// Password Hash
+// Password hash karo
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password") || !this.password) return next();
+  if (!this.isModified("password")) return next();
+  
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-// Password Check
+// Password check karo
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-// JWT Tokens
+// Access Token generate karo
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
       email: this.email,
-      name: this.name,
       role: this.role,
-      organization: this.organization,
     },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
   );
 };
 
+// Refresh Token generate karo
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     { _id: this._id },
