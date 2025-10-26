@@ -95,6 +95,10 @@ const authSlice = createSlice({
     clearUser: (state) => {
       state.user = null;
       state.accessToken = null;
+    },
+    // ✅ Set user data manually
+    setUser: (state, action) => {
+      state.user = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -102,6 +106,8 @@ const authSlice = createSlice({
       // REGISTER
       .addCase(registerUser.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
+        state.message = "";
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -113,11 +119,14 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
+        state.user = null;
       })
 
       // LOGIN
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
+        state.message = "";
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -172,11 +181,12 @@ const authSlice = createSlice({
       // ✅ UPDATE USER PROFILE
       .addCase(updateUserProfile.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
       })
       .addCase(updateUserProfile.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload; // Update user data
+        state.user = action.payload;
         state.message = "Profile updated successfully";
       })
       .addCase(updateUserProfile.rejected, (state, action) => {
@@ -188,6 +198,7 @@ const authSlice = createSlice({
       // ✅ CHANGE PASSWORD
       .addCase(changePassword.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
       })
       .addCase(changePassword.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -202,5 +213,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { resetAuthState, clearUser } = authSlice.actions;
+export const { resetAuthState, clearUser, setUser } = authSlice.actions;
 export default authSlice.reducer;

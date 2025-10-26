@@ -22,19 +22,19 @@ const generateAccessAndRefreshToken = async (user) => {
 };
 
 /**
- * Simple cookie options - development ke liye
+ * cookie options - development ke liye
  */
 const getCookieOptions = () => {
   return {
     httpOnly: true,
-    secure: false, // development mein false rakho
-    sameSite: 'lax', // simple ke liye
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    secure: false, 
+    sameSite: 'lax', 
+    maxAge: 7 * 24 * 60 * 60 * 1000, 
   };
 };
 
 /**
- * Register user - Simple version
+ * Register user 
  */
 const registerUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, password, phone, dateOfBirth, educationLevel } = req.body;
@@ -62,7 +62,7 @@ const registerUser = asyncHandler(async (req, res) => {
     educationLevel: educationLevel || ""
   });
 
-  // Get user without password
+  
   const safeUser = await User.findById(user._id).select("-password -refreshToken");
 
   return res.status(201).json(

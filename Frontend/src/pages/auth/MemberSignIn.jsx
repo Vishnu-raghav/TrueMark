@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser } from "../../features/auth/authslice";
+import { loginUser } from "../../features/auth/authslice.js";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
 
 export default function MemberSignIn() {

@@ -7,9 +7,9 @@ const authService = {
   logoutUser: async () => axiosInstance.post("/auth/logout"),
   refreshAccessToken: async () => axiosInstance.post("/auth/refreshToken"),
   
-  // ✅ NEW: Profile management
-  updateUserProfile: async (data) => axiosInstance.put("/auth/profile", data),
-  changePassword: async (data) => axiosInstance.post("/auth/changePassword", data),
+  // ✅ Profile management - endpoints correct kare
+  updateUserProfile: async (data) => axiosInstance.put("/auth/updateUserProfile", data),
+  changePassword: async (data) => axiosInstance.post("/auth/changeCurrentPassword", data),
 };
 
 export default authService;
