@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import '../../src/App.css'
 
 const DashboardSidebar = ({ 
   isOpen = true, 
@@ -14,7 +13,6 @@ const DashboardSidebar = ({
   const isOrganization = !!organization;
   const isMember = !!user;
 
-  // Common menu items for both roles
   const commonMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', roles: ['org', 'member'] },
     { id: 'certificates', label: 'Certificates', icon: '📜', roles: ['org', 'member'] },
@@ -22,7 +20,6 @@ const DashboardSidebar = ({
     { id: 'settings', label: 'Settings', icon: '⚙️', roles: ['org', 'member'] },
   ];
 
-  // Organization specific menu items
   const orgMenuItems = [
     { id: 'members', label: 'Team Members', icon: '👥', roles: ['org'] },
     { id: 'templates', label: 'Templates', icon: '🎨', roles: ['org'] },
@@ -30,168 +27,162 @@ const DashboardSidebar = ({
     { id: 'reports', label: 'Reports', icon: '📋', roles: ['org'] },
   ];
 
-  // Member specific menu items
   const memberMenuItems = [
     { id: 'my-certificates', label: 'My Certificates', icon: '🎫', roles: ['member'] },
     { id: 'verify', label: 'Verify Certificate', icon: '🔍', roles: ['member'] },
     { id: 'achievements', label: 'Achievements', icon: '🏆', roles: ['member'] },
   ];
 
-  // Combine menu items based on role
   const allMenuItems = [
     ...commonMenuItems,
     ...(isOrganization ? orgMenuItems : []),
     ...(isMember ? memberMenuItems : []),
   ];
 
-  const [expandedItems, setExpandedItems] = useState({});
-
-  const toggleExpand = (itemId) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [itemId]: !prev[itemId]
-    }));
-  };
-
   const handleItemClick = (itemId) => {
     setActiveTab(itemId);
-    if (onClose) onClose();
+    if (window.innerWidth < 1024 && onClose) {
+      onClose();
+    }
   };
 
   return (
     <>
-      {/* Overlay for mobile */}
+      {/* Mobile Overlay */}
       {!isOpen && (
-        <div className="sidebar-overlay" onClick={onClose}></div>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={onClose}
+        />
       )}
 
-      <aside className={`dashboard-sidebar ${isOpen ? 'open' : 'closed'}`}>
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-64 bg-white border-r border-gray-200
+        transform transition-transform duration-300 ease-in-out
+        flex flex-col h-screen
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         {/* Sidebar Header */}
-        <div className="sidebar-header">
-          <div className="sidebar-logo">
-            <div className="logo-icon">🎓</div>
-            <div className="logo-text">
-              <span className="logo-primary">CertiVerify</span>
-              <span className="logo-subtitle">SaaS Platform</span>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
+              🎓
+            </div>
+            <div>
+              <div className="font-bold text-gray-900">CertiVerify</div>
+              <div className="text-xs text-gray-500">SaaS Platform</div>
             </div>
           </div>
-          <button className="sidebar-close" onClick={onClose}>
-            ×
+          <button 
+            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+            onClick={onClose}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        {/* Organization/Member Info */}
-        <div className="sidebar-user-info">
-          <div className="user-avatar-large">
-            {isOrganization 
-              ? organization?.name?.charAt(0) || 'O'
-              : user?.name?.charAt(0) || 'U'
-            }
-          </div>
-          <div className="user-details">
-            <div className="user-name">
+        {/* User Info */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
               {isOrganization 
-                ? organization?.name || 'Organization'
-                : user?.name || 'User'
+                ? organization?.name?.charAt(0) || 'O'
+                : user?.name?.charAt(0) || 'U'
               }
             </div>
-            <div className="user-role">
-              {isOrganization ? 'Organization' : 'Member'}
-            </div>
-            <div className="user-status">
-              <span className="status-dot"></span>
-              Online
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 truncate">
+                {isOrganization 
+                  ? organization?.name || 'Organization'
+                  : user?.name || 'User'
+                }
+              </p>
+              <p className="text-sm text-gray-500">
+                {isOrganization ? 'Organization' : 'Member'}
+              </p>
+              <div className="flex items-center mt-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                <span className="text-xs text-gray-500">Online</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <nav className="sidebar-nav">
-          <div className="nav-section">
-            <h3 className="nav-section-title">MAIN</h3>
-            <ul className="nav-menu">
-              {allMenuItems
-                .filter(item => item.roles.includes(isOrganization ? 'org' : 'member'))
-                .map(item => (
-                <li key={item.id} className="nav-item">
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto">
+          <nav className="p-4 space-y-2">
+            <div>
+              <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Main
+              </h3>
+              <div className="space-y-1">
+                {allMenuItems
+                  .filter(item => item.roles.includes(isOrganization ? 'org' : 'member'))
+                  .map(item => (
                   <button
-                    className={`nav-link ${activeTab === item.id ? 'active' : ''}`}
+                    key={item.id}
                     onClick={() => handleItemClick(item.id)}
+                    className={`
+                      w-full flex items-center space-x-3 px-3 py-2 text-left rounded-lg transition-colors
+                      ${activeTab === item.id 
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }
+                    `}
                   >
-                    <span className="nav-icon">{item.icon}</span>
-                    <span className="nav-label">{item.label}</span>
-                    {item.subItems && (
-                      <span 
-                        className={`nav-arrow ${expandedItems[item.id] ? 'expanded' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleExpand(item.id);
-                        }}
-                      >
-                        ▼
-                      </span>
-                    )}
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="font-medium">{item.label}</span>
                   </button>
-                  
-                  {/* Sub-items (if any) */}
-                  {item.subItems && expandedItems[item.id] && (
-                    <ul className="nav-submenu">
-                      {item.subItems.map(subItem => (
-                        <li key={subItem.id}>
-                          <button
-                            className={`nav-sub-link ${activeTab === subItem.id ? 'active' : ''}`}
-                            onClick={() => handleItemClick(subItem.id)}
-                          >
-                            {subItem.label}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
+                ))}
+              </div>
+            </div>
 
-          {/* Quick Actions Section */}
-          <div className="nav-section">
-            <h3 className="nav-section-title">QUICK ACTIONS</h3>
-            <ul className="nav-menu">
-              {isOrganization && (
-                <li className="nav-item">
-                  <button className="nav-link action-link">
-                    <span className="nav-icon">➕</span>
-                    <span className="nav-label">Issue Certificate</span>
+            {/* Quick Actions */}
+            <div className="mt-8">
+              <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Quick Actions
+              </h3>
+              <div className="space-y-2">
+                {isOrganization && (
+                  <button className="w-full flex items-center space-x-3 px-3 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-sm">
+                    <span className="text-lg">➕</span>
+                    <span className="font-medium">Issue Certificate</span>
                   </button>
-                </li>
-              )}
-              <li className="nav-item">
-                <button className="nav-link action-link">
-                  <span className="nav-icon">🔍</span>
-                  <span className="nav-label">Verify Certificate</span>
+                )}
+                <button className="w-full flex items-center space-x-3 px-3 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-all shadow-sm">
+                  <span className="text-lg">🔍</span>
+                  <span className="font-medium">Verify Certificate</span>
                 </button>
-              </li>
-              {isOrganization && (
-                <li className="nav-item">
-                  <button className="nav-link action-link">
-                    <span className="nav-icon">👥</span>
-                    <span className="nav-label">Invite Member</span>
+                {isOrganization && (
+                  <button className="w-full flex items-center space-x-3 px-3 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-sm">
+                    <span className="text-lg">👥</span>
+                    <span className="font-medium">Invite Member</span>
                   </button>
-                </li>
-              )}
-            </ul>
-          </div>
-        </nav>
+                )}
+              </div>
+            </div>
+          </nav>
+        </div>
 
         {/* Sidebar Footer */}
-        <div className="sidebar-footer">
-          <div className="upgrade-banner">
-            <div className="upgrade-icon">⭐</div>
-            <div className="upgrade-content">
-              <div className="upgrade-title">Upgrade to Pro</div>
-              <div className="upgrade-text">Get access to all features</div>
+        <div className="p-4 border-t border-gray-200">
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                ⭐
+              </div>
+              <div>
+                <div className="font-semibold text-sm">Upgrade to Pro</div>
+                <div className="text-xs opacity-90">Get access to all features</div>
+              </div>
             </div>
-            <button className="upgrade-btn">Upgrade</button>
+            <button className="w-full bg-white text-blue-600 py-2 px-4 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors">
+              Upgrade Now
+            </button>
           </div>
         </div>
       </aside>
