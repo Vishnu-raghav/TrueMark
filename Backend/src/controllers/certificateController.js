@@ -7,6 +7,7 @@ import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js
 import { generateHMAC } from "../utils/hash.js";
 import { nanoid } from "nanoid";
 import { AuditLog } from "../models/AuditLog.model.js";
+import mongoose from "mongoose";
 
 /**
  * Helper for writing audit log
@@ -27,68 +28,6 @@ const writeAudit = async ({ req, user = null, organization = null, action, detai
   }
 };
 
-// /**
-//  * ISSUE Certificate
-//  */
-// const createCertificate = asyncHandler(async (req, res) => {
-//   const { title, description, expiryDate, metaData } = req.body;
-//   const recipientId = req.params.userId; // URL se le rahe hain
-
-//   if (!title || !recipientId) {
-//     throw new ApiError(400, "Title and recipientId are required");
-//   }
-
-//   const recipient = await User.findById(recipientId);
-//   if (!recipient) throw new ApiError(404, "Recipient not found");
-
-//   const certificateFile = req.file;
-//   if (!certificateFile) {
-//     throw new ApiError(400, "Certificate file is required");
-//   }
-
-//   const uploadedFile = await uploadOnCloudinary(certificateFile.path);
-//   if (!uploadedFile?.secure_url) {
-//     throw new ApiError(500, "Failed to upload certificate file");
-//   }
-
-//   const certificateId = nanoid(8);
-
-//   const dataToHash = JSON.stringify({
-//     title,
-//     recipient: recipient._id.toString(),
-//     issuedBy: req.user.organization.toString(),
-//     issueDate: new Date().toISOString(),
-//   });
-
-//   const verificationHash = generateHMAC(dataToHash);
-
-//   const certificate = await Certificate.create({
-//     title,
-//     description,
-//     certificateId,
-//     verificationHash,
-//     issueDate: new Date(),
-//     expiryDate,
-//     recipient: recipient._id,
-//     issuedBy: req.user.organization,
-//     fileUrl: uploadedFile.secure_url,
-//     metaData,
-//   });
-
-//   await writeAudit({
-//     req,
-//     user: req.user,
-//     organization: req.user.organization,
-//     action: "ISSUE_CERTIFICATE",
-//     details: { certificateId, recipient: recipient.email },
-//   });
-
-//   return res
-//     .status(201)
-//     .json(new ApiResponse(201, certificate, "Certificate issued successfully"));
-// });
-
-
 const createCertificate = asyncHandler(async (req, res) => {
   const { title, description, expiryDate, metaData } = req.body;
   const recipientId = req.params.userId;
@@ -105,8 +44,7 @@ const createCertificate = asyncHandler(async (req, res) => {
   if (!uploadedFile?.secure_url) throw new ApiError(500, "Failed to upload certificate file");
 
   const certificateId = nanoid(8);
-
-  const issueDate = new Date().toISOString(); // 🔑 single source of truth
+  const issueDate = new Date().toISOString();
 
   const dataToHash = JSON.stringify({
     title,
@@ -117,6 +55,7 @@ const createCertificate = asyncHandler(async (req, res) => {
 
   const verificationHash = generateHMAC(dataToHash);
 
+  // ✅ Create certificate
   const certificate = await Certificate.create({
     title,
     description,
@@ -124,11 +63,21 @@ const createCertificate = asyncHandler(async (req, res) => {
     verificationHash,
     issueDate,
     expiryDate,
-    recipient: recipient._id,
+    recipient: recipientId, // String format mein hi rahega
     issuedBy: req.user.organization,
     fileUrl: uploadedFile.secure_url,
     metaData,
   });
+
+  // ✅ FIX: User ke certificates array mein bhi add karo
+  await User.findByIdAndUpdate(
+    recipientId,
+    { 
+      $push: { certificates: certificate._id } 
+    }
+  );
+
+  console.log("✅ Certificate created and added to user's certificates array");
 
   await writeAudit({
     req,
@@ -142,6 +91,10 @@ const createCertificate = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, certificate, "Certificate issued successfully"));
 });
+
+
+
+
 /**
  * DELETE Certificate
  */
@@ -201,21 +154,72 @@ const listCertificates = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, certificates, "Certificates list fetched successfully"));
 });
 
+/**
+ * LIST User Certificates - FIXED VERSION
+ */
 const listUserCertificates = asyncHandler(async (req, res) => {
-  const certificates = await Certificate.find({ recipient: req.user._id })
-    .populate("issuedBy", "name email") // organization info
-    .sort({ issueDate: -1 }); // latest first
+  console.log("=== 🔍 DEBUG: listUserCertificates ===");
+  console.log("User ID:", req.user._id);
+  console.log("User ID string:", req.user._id.toString());
 
-  if (!certificates.length) {
-    return res
-      .status(200)
-      .json(new ApiResponse(200, [], "No certificates found for this user"));
+  try {
+    // ✅ FIX: Use STRING comparison since recipient is stored as string
+    const userIdString = req.user._id.toString();
+    
+    const certificates = await Certificate.find({ recipient: userIdString })
+      .populate("issuedBy", "name email")
+      .sort({ issueDate: -1 });
+
+    console.log("🔍 Certificates found with STRING comparison:", certificates.length);
+    
+    if (certificates.length > 0) {
+      certificates.forEach((cert, index) => {
+        console.log(`✅ Certificate ${index + 1}:`, {
+          id: cert._id,
+          title: cert.title,
+          recipient: cert.recipient,
+          recipientType: typeof cert.recipient
+        });
+      });
+    } else {
+      console.log("❌ No certificates found with string comparison");
+      
+      // Debug: Check all certificates in DB
+      const allCerts = await Certificate.find({});
+      console.log("📊 All certificates in DB:", allCerts.map(c => ({
+        id: c._id,
+        title: c.title,
+        recipient: c.recipient,
+        recipientType: typeof c.recipient
+      })));
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, certificates, "User certificates fetched successfully")
+    );
+
+  } catch (error) {
+    console.error("❌ Error in listUserCertificates:", error);
+    throw new ApiError(500, "Failed to fetch user certificates: " + error.message);
   }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, certificates, "User certificates fetched successfully"));
 });
 
+export { 
+  createCertificate, 
+  deleteCertificate, 
+  getCertificate, 
+  listCertificates, 
+  listUserCertificates 
+};
 
-export { createCertificate, deleteCertificate, getCertificate, listCertificates, listUserCertificates };
+
+
+
+
+
+
+
+
+
+
+

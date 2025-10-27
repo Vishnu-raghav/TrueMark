@@ -13,13 +13,13 @@ import { isAdmin } from "../middlewares/role.middleware.js";
 const router = Router();
 
 // Public routes
-router.post("/register", registerOrganization); // ✅ Better naming
-router.post("/login", loginOrganization); // ✅ Better naming
+router.post("/register", registerOrganization); 
+router.post("/login", loginOrganization); 
 router.post("/refresh-token", refreshOrgAccessToken);
 
 // Protected routes (Organization auth required)
-router.post("/logout", verifyOrgJWT, logoutOrganization); // ✅ Better naming
-router.get("/profile", verifyOrgJWT, getOrganization); // ✅ NEW - Get org details
+router.post("/logout", verifyOrgJWT, logoutOrganization);
+router.get("/profile", verifyOrgJWT, getOrganization); 
 
 // Admin only routes
 router.post("/assign-role", verifyOrgJWT, isAdmin, assignRole);
