@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import  { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from '../features/auth/authslice.js';
 import { logoutOrganization } from '../features/organization/organizationSlice.js';
+import '../../src/App.css'
 
 const DashboardHeader = ({ 
   title = "Dashboard", 
