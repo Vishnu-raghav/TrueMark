@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateUserProfile } from '../../redux/auth/authSlice';
+import { updateUserProfile } from '../../../features/auth/authslice.js';
 
 export default function Profile() {
   const dispatch = useDispatch();

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { changePassword } from '../../redux/auth/authSlice';
+import { changePassword } from '../../../features/auth/authslice.js';
 
 export default function Settings() {
   const dispatch = useDispatch();

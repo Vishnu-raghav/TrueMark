@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { verifyCertificate } from '../../redux/certificate/certificateSlice';
+import { verifyCertificate } from '../../../features/certificate/certificateSlice.js';
 
 export default function VerifyCertificate() {
   const dispatch = useDispatch();
