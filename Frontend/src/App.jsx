@@ -142,7 +142,7 @@ import Pricing from "./pages/public/Pricing";
 import Unauthorized from "./pages/public/Unauthorized";
 
 // Auth Pages - COMMON SIGNIN BANAYA HAI
-import SignIn from "./pages/auth/SignIn"; // ✅ Ye common signin banayein
+import SignIn from "./pages/auth/SignIn"; 
 import OrgSignUp from "./pages/auth/OrgSignUp";
 import MemberSignUp from "./pages/auth/MemberSignUp";
 
