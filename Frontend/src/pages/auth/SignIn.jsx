@@ -13,7 +13,7 @@ export default function SignIn() {
   });
   
   const [showPassword, setShowPassword] = useState(false);
-  const [userType, setUserType] = useState("member"); // 'member' or 'organization'
+  const [userType, setUserType] = useState("member");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   

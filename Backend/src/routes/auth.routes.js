@@ -22,7 +22,7 @@ router.post("/refreshToken", refreshAccessToken);
 router.post("/logout", verifyJWT, logoutUser);
 router.post("/changePassword", verifyJWT, changeCurrentPassword);
 router.get("/getCurrentUser", verifyJWT, getCurrentUser);
-router.put("/profile", verifyJWT, updateUserProfile); // ✅ Added profile update route
+router.put("/profile", verifyJWT, updateUserProfile); 
 router.get("/mycertificates", verifyJWT, listUserCertificates);
 
 export default router;

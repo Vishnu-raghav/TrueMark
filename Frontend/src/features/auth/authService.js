@@ -8,8 +8,8 @@ const authService = {
   refreshAccessToken: async () => axiosInstance.post("/auth/refreshToken"),
   
   // ✅ Profile management - endpoints correct kare
-  updateUserProfile: async (data) => axiosInstance.put("/auth/updateUserProfile", data),
-  changePassword: async (data) => axiosInstance.post("/auth/changeCurrentPassword", data),
+  updateUserProfile: async (data) => axiosInstance.put("/auth/profile", data),
+  changePassword: async (data) => axiosInstance.post("/auth/changePassword", data),
 };
 
 export default authService;
