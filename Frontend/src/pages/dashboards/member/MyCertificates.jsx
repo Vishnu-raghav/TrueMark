@@ -9,14 +9,32 @@ export default function MyCertificates() {
   const [showModal, setShowModal] = useState(false);
   const [copiedId, setCopiedId] = useState('');
 
-  const { certificates, isLoading, isError, message } = useSelector((state) => state.certificate);
+  const certificateState = useSelector((state) => state.certificate);
   const { user } = useSelector((state) => state.auth);
 
+  // ✅ FIX: Safe certificates extraction
+  const certificates = Array.isArray(certificateState.certificates) 
+    ? certificateState.certificates 
+    : [];
+  const isLoading = certificateState.isLoading || false;
+  const isError = certificateState.isError || false;
+  const message = certificateState.message || '';
+
   useEffect(() => {
+    console.log("🔄 Fetching certificates...");
     dispatch(listUserCertificates());
   }, [dispatch]);
 
-  // Filter certificates based on status
+  // ✅ Debug: Check Redux state structure
+  useEffect(() => {
+    console.log("📊 Full certificateState:", certificateState);
+    console.log("📊 Certificates array:", certificates);
+    console.log("📊 Certificates count:", certificates.length);
+    console.log("📊 Loading state:", isLoading);
+    console.log("📊 Error state:", isError);
+  }, [certificateState, certificates, isLoading, isError]);
+
+  // ✅ FIX: Safe filtering
   const filteredCertificates = certificates.filter(cert => {
     if (filter === 'all') return true;
     if (filter === 'verified') return cert.status === 'active';
@@ -64,7 +82,6 @@ export default function MyCertificates() {
         console.log('Sharing cancelled');
       }
     } else {
-      // Fallback: copy verification link
       const verificationLink = `${window.location.origin}/verify/${certificate.certificateId}`;
       navigator.clipboard.writeText(verificationLink);
       alert('Verification link copied to clipboard!');
@@ -81,20 +98,28 @@ export default function MyCertificates() {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   const getDaysRemaining = (expiryDate) => {
     if (!expiryDate) return null;
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    try {
+      const today = new Date();
+      const expiry = new Date(expiryDate);
+      const diffTime = expiry - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    } catch (error) {
+      return null;
+    }
   };
 
   if (isLoading) {
@@ -114,6 +139,31 @@ export default function MyCertificates() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">My Certificates</h1>
+            <p className="text-gray-600 mt-2">Manage and view all your certificates</p>
+          </div>
+          
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+            <div className="text-red-600 text-6xl mb-4">❌</div>
+            <h3 className="text-xl font-semibold text-red-800 mb-2">Error Loading Certificates</h3>
+            <p className="text-red-600 mb-4">{message || 'Failed to load certificates'}</p>
+            <button 
+              onClick={() => dispatch(listUserCertificates())}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         </div>
       </div>
@@ -201,16 +251,6 @@ export default function MyCertificates() {
             </div>
           </div>
         </div>
-
-        {/* Error Message */}
-        {isError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <div className="flex items-center">
-              <div className="text-red-600 font-medium">Error:</div>
-              <div className="text-red-600 ml-2">{message}</div>
-            </div>
-          </div>
-        )}
 
         {/* Certificates Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -342,7 +382,7 @@ export default function MyCertificates() {
             </p>
             {certificates.length === 0 ? (
               <button 
-                onClick={() => window.location.reload()}
+                onClick={() => dispatch(listUserCertificates())}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
               >
                 Refresh

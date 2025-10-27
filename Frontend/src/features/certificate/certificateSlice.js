@@ -1,16 +1,19 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import certificateService from "./certificateService.js";
-import { logoutUser } from "../auth/authslice.js"; // only slice import
+import { logoutUser } from "../auth/authslice.js";
 
 // ===== THUNKS =====
 
-// ISSUE CERTIFICATE
+// ISSUE CERTIFICATE - FIXED
 export const issueCertificate = createAsyncThunk(
   "certificate/issueCertificate",
   async ({ userId, data }, thunkAPI) => {
     try {
       const res = await certificateService.issueCertificate(userId, data);
-      return res.data.certificate || res.data.data?.certificate || res.data
+      console.log("issueCertificate Response:", res.data);
+      
+      // ✅ FIX: Correct response structure
+      return res.data.data || res.data;
     } catch (error) {
       if (error.isAuthError) thunkAPI.dispatch(logoutUser());
       return thunkAPI.rejectWithValue(error.response?.data?.message || "Issue failed");
@@ -18,13 +21,16 @@ export const issueCertificate = createAsyncThunk(
   }
 );
 
-// GET CERTIFICATE BY ID
+// GET CERTIFICATE BY ID - FIXED
 export const getCertificate = createAsyncThunk(
   "certificate/getCertificate",
   async (id, thunkAPI) => {
     try {
       const res = await certificateService.getCertificate(id);
-      return res.data.certificate || res.data.data?.certificate || res.data
+      console.log("getCertificate Response:", res.data);
+      
+      // ✅ FIX: Correct response structure
+      return res.data.data || res.data;
     } catch (error) {
       if (error.isAuthError) thunkAPI.dispatch(logoutUser());
       return thunkAPI.rejectWithValue(error.response?.data?.message || "Fetch failed");
@@ -32,13 +38,23 @@ export const getCertificate = createAsyncThunk(
   }
 );
 
-// LIST ISSUED CERTIFICATES (ORG)
+// LIST ISSUED CERTIFICATES (ORG) - FIXED
 export const listIssuedCertificates = createAsyncThunk(
   "certificate/listIssuedCertificates",
   async (_, thunkAPI) => {
     try {
       const res = await certificateService.listIssuedCertificates();
-      return res.data.certificate || res.data.data?.certificate || res.data
+      console.log("listIssuedCertificates Response:", res.data);
+      
+      // ✅ FIX: Correct response structure for arrays
+      if (res.data && Array.isArray(res.data.data)) {
+        return res.data.data;
+      } else if (Array.isArray(res.data)) {
+        return res.data;
+      } else {
+        console.warn("Unexpected response structure:", res.data);
+        return [];
+      }
     } catch (error) {
       if (error.isAuthError) thunkAPI.dispatch(logoutUser());
       return thunkAPI.rejectWithValue(error.response?.data?.message || "Failed to fetch issued");
@@ -46,13 +62,23 @@ export const listIssuedCertificates = createAsyncThunk(
   }
 );
 
-// LIST USER CERTIFICATES
+// LIST USER CERTIFICATES - FIXED
 export const listUserCertificates = createAsyncThunk(
   "certificate/listUserCertificates",
   async (_, thunkAPI) => {
     try {
       const res = await certificateService.listUserCertificates();
-      return res.data.certificate || res.data.data?.certificate || res.data
+      console.log("listUserCertificates Response:", res.data);
+      
+      // ✅ FIX: Correct response structure for arrays
+      if (res.data && Array.isArray(res.data.data)) {
+        return res.data.data;
+      } else if (Array.isArray(res.data)) {
+        return res.data;
+      } else {
+        console.warn("Unexpected response structure:", res.data);
+        return [];
+      }
     } catch (error) {
       if (error.isAuthError) thunkAPI.dispatch(logoutUser());
       return thunkAPI.rejectWithValue(error.response?.data?.message || "Failed to fetch user certs");
@@ -60,34 +86,38 @@ export const listUserCertificates = createAsyncThunk(
   }
 );
 
-// VERIFY CERTIFICATE
+// VERIFY CERTIFICATE - FIXED
 export const verifyCertificate = createAsyncThunk(
   "certificate/verifyCertificate",
   async (id, thunkAPI) => {
     try {
       const res = await certificateService.verifyCertificate(id);
-      const data = res.data.data || {}
-console.log("Verifying ID:", id)
-       if (!data.valid || !data.certificate) {
+      console.log("verifyCertificate Response:", res.data);
+      
+      const data = res.data.data || res.data || {};
+      
+      if (!data.valid || !data.certificate) {
         return thunkAPI.rejectWithValue("Certificate not found or invalid");
       }
 
       return data.certificate;
     } catch (error) {
-       return thunkAPI.rejectWithValue(
+      return thunkAPI.rejectWithValue(
         error.response?.data?.message || "Verification failed"
       );
     }
   }
 );
 
-// DELETE CERTIFICATE
+// DELETE CERTIFICATE - FIXED
 export const deleteCertificate = createAsyncThunk(
   "certificate/deleteCertificate",
   async (id, thunkAPI) => {
     try {
       const res = await certificateService.deleteCertificate(id);
-      return res.data.message;
+      console.log("deleteCertificate Response:", res.data);
+      
+      return res.data.message || "Certificate deleted successfully";
     } catch (error) {
       if (error.isAuthError) thunkAPI.dispatch(logoutUser());
       return thunkAPI.rejectWithValue(error.response?.data?.message || "Delete failed");
