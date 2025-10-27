@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const DashboardSidebar = ({ 
   isOpen = true, 
@@ -7,30 +8,33 @@ const DashboardSidebar = ({
   activeTab,
   setActiveTab 
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useSelector((state) => state.auth);
   const { organization } = useSelector((state) => state.organization);
   
   const isOrganization = !!organization;
   const isMember = !!user;
+  const basePath = isMember ? '/member' : '/org';
 
   const commonMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', roles: ['org', 'member'] },
-    { id: 'certificates', label: 'Certificates', icon: '📜', roles: ['org', 'member'] },
-    { id: 'profile', label: 'Profile', icon: '👤', roles: ['org', 'member'] },
-    { id: 'settings', label: 'Settings', icon: '⚙️', roles: ['org', 'member'] },
+    { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard', roles: ['org', 'member'] },
+    { id: 'certificates', label: 'Certificates', icon: '📜', path: isMember ? '/my-certificates' : '/certificates', roles: ['org', 'member'] },
+    { id: 'profile', label: 'Profile', icon: '👤', path: '/profile', roles: ['org', 'member'] },
+    { id: 'settings', label: 'Settings', icon: '⚙️', path: '/settings', roles: ['org', 'member'] },
   ];
 
   const orgMenuItems = [
-    { id: 'members', label: 'Team Members', icon: '👥', roles: ['org'] },
-    { id: 'templates', label: 'Templates', icon: '🎨', roles: ['org'] },
-    { id: 'analytics', label: 'Analytics', icon: '📈', roles: ['org'] },
-    { id: 'reports', label: 'Reports', icon: '📋', roles: ['org'] },
+    { id: 'members', label: 'Team Members', icon: '👥', path: '/members', roles: ['org'] },
+    { id: 'templates', label: 'Templates', icon: '🎨', path: '/templates', roles: ['org'] },
+    { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics', roles: ['org'] },
+    { id: 'reports', label: 'Reports', icon: '📋', path: '/reports', roles: ['org'] },
   ];
 
   const memberMenuItems = [
-    { id: 'my-certificates', label: 'My Certificates', icon: '🎫', roles: ['member'] },
-    { id: 'verify', label: 'Verify Certificate', icon: '🔍', roles: ['member'] },
-    { id: 'achievements', label: 'Achievements', icon: '🏆', roles: ['member'] },
+    { id: 'my-certificates', label: 'My Certificates', icon: '🎫', path: '/my-certificates', roles: ['member'] },
+    { id: 'verify', label: 'Verify Certificate', icon: '🔍', path: '/verify', roles: ['member'] },
+    { id: 'achievements', label: 'Achievements', icon: '🏆', path: '/achievements', roles: ['member'] },
   ];
 
   const allMenuItems = [
@@ -39,12 +43,47 @@ const DashboardSidebar = ({
     ...(isMember ? memberMenuItems : []),
   ];
 
-  const handleItemClick = (itemId) => {
-    setActiveTab(itemId);
+  const handleItemClick = (item) => {
+    const fullPath = `${basePath}${item.path}`;
+    setActiveTab(item.id);
+    navigate(fullPath);
+    
     if (window.innerWidth < 1024 && onClose) {
       onClose();
     }
   };
+
+  const handleQuickAction = (action) => {
+    switch(action) {
+      case 'issue':
+        navigate(`${basePath}/certificates?action=issue`);
+        break;
+      case 'verify':
+        navigate(isMember ? `${basePath}/verify` : '/verify');
+        break;
+      case 'invite':
+        navigate(`${basePath}/members?action=invite`);
+        break;
+      default:
+        break;
+    }
+    
+    if (window.innerWidth < 1024 && onClose) {
+      onClose();
+    }
+  };
+
+  // Determine active tab based on current route
+  const getActiveTabFromRoute = () => {
+    const currentPath = location.pathname;
+    const item = allMenuItems.find(item => 
+      currentPath === `${basePath}${item.path}` || 
+      currentPath.startsWith(`${basePath}${item.path}/`)
+    );
+    return item ? item.id : 'dashboard';
+  };
+
+  const currentActiveTab = activeTab || getActiveTabFromRoute();
 
   return (
     <>
@@ -66,7 +105,10 @@ const DashboardSidebar = ({
       `}>
         {/* Sidebar Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
+          <div 
+            className="flex items-center space-x-3 cursor-pointer"
+            onClick={() => navigate(`${basePath}/dashboard`)}
+          >
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
               🎓
             </div>
@@ -125,10 +167,10 @@ const DashboardSidebar = ({
                   .map(item => (
                   <button
                     key={item.id}
-                    onClick={() => handleItemClick(item.id)}
+                    onClick={() => handleItemClick(item)}
                     className={`
                       w-full flex items-center space-x-3 px-3 py-2 text-left rounded-lg transition-colors
-                      ${activeTab === item.id 
+                      ${currentActiveTab === item.id 
                         ? 'bg-blue-50 text-blue-700 border border-blue-200' 
                         : 'text-gray-700 hover:bg-gray-100'
                       }
@@ -148,17 +190,26 @@ const DashboardSidebar = ({
               </h3>
               <div className="space-y-2">
                 {isOrganization && (
-                  <button className="w-full flex items-center space-x-3 px-3 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-sm">
+                  <button 
+                    onClick={() => handleQuickAction('issue')}
+                    className="w-full flex items-center space-x-3 px-3 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-sm"
+                  >
                     <span className="text-lg">➕</span>
                     <span className="font-medium">Issue Certificate</span>
                   </button>
                 )}
-                <button className="w-full flex items-center space-x-3 px-3 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-all shadow-sm">
+                <button 
+                  onClick={() => handleQuickAction('verify')}
+                  className="w-full flex items-center space-x-3 px-3 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-all shadow-sm"
+                >
                   <span className="text-lg">🔍</span>
                   <span className="font-medium">Verify Certificate</span>
                 </button>
                 {isOrganization && (
-                  <button className="w-full flex items-center space-x-3 px-3 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-sm">
+                  <button 
+                    onClick={() => handleQuickAction('invite')}
+                    className="w-full flex items-center space-x-3 px-3 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-sm"
+                  >
                     <span className="text-lg">👥</span>
                     <span className="font-medium">Invite Member</span>
                   </button>

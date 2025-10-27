@@ -5,28 +5,6 @@ export default function MyCertificates() {
   
   const certificates = [
     {
-      id: 1,
-      name: 'React Developer Certificate',
-      issuer: 'Tech Corporation Inc.',
-      issueDate: '2024-01-15',
-      expiryDate: '2026-01-15',
-      status: 'verified',
-      type: 'Development',
-      badge: '🎓',
-      verificationId: 'CERT-001'
-    },
-    {
-      id: 2,
-      name: 'JavaScript Advanced Course',
-      issuer: 'Code Academy',
-      issueDate: '2024-01-10',
-      expiryDate: '2025-01-10',
-      status: 'verified',
-      type: 'Programming',
-      badge: '⭐',
-      verificationId: 'CERT-002'
-    },
-    {
       id: 3,
       name: 'Cloud Fundamentals',
       issuer: 'Cloud Institute',
