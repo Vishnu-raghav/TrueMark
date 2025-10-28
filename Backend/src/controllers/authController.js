@@ -51,14 +51,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please provide a valid email address");
   }
 
-  // ✅ NEW: Strict domain validation - personal emails not allowed
-  const emailDomain = email.split('@')[1];
-  const personalDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'protonmail.com'];
-  
-  if (personalDomains.includes(emailDomain.toLowerCase())) {
-    throw new ApiError(400, "Personal email addresses are not allowed. Please use your organization/institute email address.");
-  }
-
   // Check if user exists
   const existedUser = await User.findOne({ email });
   if (existedUser) {
@@ -70,6 +62,8 @@ const registerUser = asyncHandler(async (req, res) => {
   let autoConnected = false;
   
   try {
+    const emailDomain = email.split('@')[1];
+    
     if (emailDomain) {
       // Find active organization with matching domain
       organization = await Organization.findOne({ 
@@ -77,18 +71,11 @@ const registerUser = asyncHandler(async (req, res) => {
         status: "active" // Only connect to active organizations
       });
       
-      if (!organization) {
-        throw new ApiError(400, `No registered organization found with domain: ${emailDomain}. Please contact your institution or use a valid organization email.`);
-      }
-      
-      autoConnected = true;
+      autoConnected = !!organization;
     }
   } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
     console.error("Error finding organization by domain:", error);
-    throw new ApiError(500, "Error validating organization domain");
+    // Continue without organization if there's an error
   }
 
   // Create user
@@ -121,7 +108,13 @@ const registerUser = asyncHandler(async (req, res) => {
   // Get user without sensitive data
   const safeUser = await User.findById(user._id)
     .select("-password -refreshToken")
-    .populate("organization", "name emailDomain");
+    .populate("organization", "name emailDomain"); // Populate organization details
+
+  // Prepare response message
+  let message = "User registered successfully";
+  if (autoConnected) {
+    message = `User registered and automatically connected to ${organization.name}`;
+  }
 
   return res.status(201).json(
     new ApiResponse(
@@ -135,15 +128,12 @@ const registerUser = asyncHandler(async (req, res) => {
           emailDomain: organization.emailDomain
         } : null
       }, 
-      `User registered successfully and connected to ${organization.name}`
+      message
     )
   );
 });
-
-
-
 /**
- * Login User - With domain validation
+ * Login User - Simple version
  */
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -152,31 +142,10 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Email and password are required");
   }
 
-  // ✅ NEW: Check if email belongs to registered organization
-  const emailDomain = email.split('@')[1];
-  if (!emailDomain) {
-    throw new ApiError(400, "Invalid email format");
-  }
-
-  // Check if organization exists with this domain
-  const organization = await Organization.findOne({ 
-    emailDomain: emailDomain.toLowerCase(),
-    status: "active"
-  });
-
-  if (!organization) {
-    throw new ApiError(403, `No registered organization found with domain: ${emailDomain}. Please use your organization email or contact your institution.`);
-  }
-
   // Find user with password
   const user = await User.findOne({ email }).select("+password +refreshToken");
   if (!user) {
-    throw new ApiError(401, "Invalid email or password. Please make sure you're using your organization email address.");
-  }
-
-  // ✅ NEW: Additional check - user must belong to an organization
-  if (!user.organization) {
-    throw new ApiError(403, "Your account is not associated with any organization. Please contact your institution.");
+    throw new ApiError(401, "Invalid email or password");
   }
 
   // Check password
@@ -189,9 +158,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user);
   
   // Get user without sensitive data
-  const safeUser = await User.findById(user._id)
-    .select("-password -refreshToken")
-    .populate("organization", "name emailDomain");
+  const safeUser = await User.findById(user._id).select("-password -refreshToken");
 
   // Set cookies
   const cookieOptions = getCookieOptions();
@@ -203,11 +170,8 @@ const loginUser = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200, 
-        { 
-          user: safeUser, 
-          accessToken 
-        }, 
-        `Login successful - Welcome to ${safeUser.organization.name}`
+        { user: safeUser, accessToken }, 
+        "Login successful"
       )
     );
 });
