@@ -67,6 +67,21 @@ const organizationSchema = new mongoose.Schema(
       maxUsers: { type: Number, default: 1000 }
     },
 
+    emailDomain: {
+    type: String,
+    required: true,
+    default: "example.com" // Temporary
+  },
+  
+  // Settings for auto-approval
+  settings: {
+     autoApproveCertificates: { type: Boolean, default: false },
+      allowMemberRegistration: { type: Boolean, default: true },
+      maxUsers: { type: Number, default: 1000 },
+      // ✅ NEW: Auto-approve students by domain
+      autoApproveByDomain: { type: Boolean, default: true }
+  },
+
     refreshToken: { type: String },
   },
   { timestamps: true }

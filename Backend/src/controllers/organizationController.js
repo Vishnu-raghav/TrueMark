@@ -40,79 +40,183 @@ const generateAccessAndRefreshToken = async (organization) => {
 /**
  * Register organization
  */
+
 const registerOrganization = asyncHandler(async (req, res) => {
-  const { orgName, orgEmail, adminName, adminEmail, adminPassword, type, address, phone, website, description } = req.body;
+  const { 
+    orgName, 
+    orgEmail, 
+    adminName, 
+    adminEmail, 
+    adminPassword, 
+    type, 
+    address, 
+    phone, 
+    website, 
+    description, 
+    emailDomain 
+  } = req.body;
   
-  if (![orgName, orgEmail, adminName, adminEmail, adminPassword].every(Boolean)) {
+  // Required fields validation
+  if (!orgName || !orgEmail || !adminName || !adminEmail || !adminPassword) {
     throw new ApiError(400, "Organization name, email, admin name, admin email and password are required");
   }
 
+  // Email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(orgEmail) || !emailRegex.test(adminEmail)) {
+    throw new ApiError(400, "Please provide valid email addresses");
+  }
+
+  // Password strength validation
+  if (adminPassword.length < 6) {
+    throw new ApiError(400, "Password must be at least 6 characters long");
+  }
+
+  // Email domain validation and setup
+  let finalEmailDomain = emailDomain;
+  
+  if (!finalEmailDomain) {
+    // Auto-extract from orgEmail
+    const domainParts = orgEmail.split('@');
+    if (domainParts.length !== 2) {
+      throw new ApiError(400, "Invalid organization email format");
+    }
+    finalEmailDomain = domainParts[1];
+  }
+
+  // Validate email domain format
+  if (!finalEmailDomain || !finalEmailDomain.includes('.')) {
+    throw new ApiError(400, "Valid email domain is required (e.g., eitfaridabad.co.in)");
+  }
+
+  finalEmailDomain = finalEmailDomain.toLowerCase().trim();
+
   // Check if organization already exists
   const existingOrg = await Organization.findOne({ 
-    $or: [{ name: orgName }, { email: orgEmail }] 
+    $or: [
+      { name: { $regex: new RegExp(`^${orgName}$`, 'i') } }, // Case insensitive
+      { email: orgEmail.toLowerCase() },
+      { emailDomain: finalEmailDomain }
+    ] 
   });
+
   if (existingOrg) {
-    throw new ApiError(400, "Organization with this name or email already exists");
+    if (existingOrg.name.toLowerCase() === orgName.toLowerCase()) {
+      throw new ApiError(409, "Organization with this name already exists");
+    }
+    if (existingOrg.email === orgEmail.toLowerCase()) {
+      throw new ApiError(409, "Organization with this email already exists");
+    }
+    if (existingOrg.emailDomain === finalEmailDomain) {
+      throw new ApiError(409, "This email domain is already registered with another organization");
+    }
   }
 
   // Check if admin email already in use
-  const existingAdmin = await User.findOne({ email: adminEmail });
+  const existingAdmin = await User.findOne({ email: adminEmail.toLowerCase() });
   if (existingAdmin) {
-    throw new ApiError(400, "Admin email already in use");
+    throw new ApiError(409, "Admin email already in use");
   }
 
-  // Create organization
-  const org = await Organization.create({
-    name: orgName,
-    email: orgEmail,
-    type: type || "other",
-    password: adminPassword,
-    address: address || "",
-    phone: phone || "",
-    website: website || "",
-    description: description || "",
-    status: process.env.AUTO_APPROVE_ORG === "true" ? "active" : "pending"
-  });
+  // Create organization in transaction to ensure data consistency
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  // Create admin user
-  const adminUser = await User.create({
-    name: adminName,
-    email: adminEmail,
-    password: adminPassword,
-    role: "orgAdmin",
-    organization: org._id,
-  });
+  try {
+    // Create organization
+    const org = await Organization.create([{
+      name: orgName.trim(),
+      email: orgEmail.toLowerCase(),
+      type: type || "other",
+      emailDomain: finalEmailDomain,
+      password: adminPassword,
+      address: address?.trim() || "",
+      phone: phone?.trim() || "",
+      website: website?.trim() || "",
+      description: description?.trim() || "",
+      status: process.env.AUTO_APPROVE_ORG === "true" ? "active" : "pending",
+      settings: {
+        autoApproveCertificates: false,
+        allowMemberRegistration: true,
+        maxUsers: 1000,
+        autoApproveByDomain: true
+      }
+    }], { session });
 
-  // Update organization with admin reference
-  org.admin = adminUser._id;
-  org.members.push(adminUser._id);
-  org.staff.push({
-    user: adminUser._id,
-    role: "orgAdmin"
-  });
-  await org.save();
+    const organization = org[0];
 
-  await writeAudit({
-    req,
-    organization: org,
-    user: adminUser,
-    action: "REGISTER_ORG",
-    details: { 
-      adminEmail,
-      status: org.status 
-    },
-  });
+    // Create admin user
+    const adminUser = await User.create([{
+      name: adminName.trim(),
+      email: adminEmail.toLowerCase(),
+      password: adminPassword,
+      role: "orgAdmin",
+      organization: organization._id,
+      phone: phone?.trim() || "",
+    }], { session });
 
-  return res.status(201).json(
-    new ApiResponse(
-      201, 
-      { 
-        organization: org, 
-        admin: adminUser 
-      }, 
-      `Organization registered successfully. Status: ${org.status}`
-    )
-  );
+    const admin = adminUser[0];
+
+    // Update organization with admin reference
+    organization.admin = admin._id;
+    organization.members.push(admin._id);
+    organization.staff.push({
+      user: admin._id,
+      role: "orgAdmin",
+      assignedAt: new Date()
+    });
+
+    await organization.save({ session });
+
+    // Commit transaction
+    await session.commitTransaction();
+
+    // Populate organization data for response
+    const populatedOrg = await Organization.findById(organization._id)
+      .select("-password -refreshToken")
+      .populate("admin", "name email");
+
+    await writeAudit({
+      req,
+      organization: populatedOrg,
+      user: admin,
+      action: "REGISTER_ORG",
+      details: { 
+        adminEmail: admin.email,
+        emailDomain: finalEmailDomain,
+        status: populatedOrg.status 
+      },
+    });
+
+    return res.status(201).json(
+      new ApiResponse(
+        201, 
+        { 
+          organization: populatedOrg, 
+          admin: {
+            _id: admin._id,
+            name: admin.name,
+            email: admin.email,
+            role: admin.role
+          }
+        }, 
+        `Organization registered successfully. Status: ${populatedOrg.status}`
+      )
+    );
+
+  } catch (error) {
+    // Rollback transaction on error
+    await session.abortTransaction();
+    
+    if (error.code === 11000) {
+      throw new ApiError(409, "Organization with similar details already exists");
+    }
+    
+    console.error("Organization registration error:", error);
+    throw new ApiError(500, "Failed to register organization. Please try again.");
+  } finally {
+    session.endSession();
+  }
 });
 
 /**

@@ -2,6 +2,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
+import { Organization } from "../models/Organization.model.js";
 import jwt from "jsonwebtoken";
 
 /**
@@ -35,8 +36,7 @@ const getCookieOptions = () => {
 
 /**
  * Register user 
- */
-const registerUser = asyncHandler(async (req, res) => {
+ */const registerUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, password, phone, dateOfBirth, educationLevel } = req.body;
   
   // Basic validation
@@ -44,32 +44,93 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "First name, last name, email and password are required");
   }
 
+  // Email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new ApiError(400, "Please provide a valid email address");
+  }
+
   // Check if user exists
   const existedUser = await User.findOne({ email });
   if (existedUser) {
-    throw new ApiError(400, "User with this email already exists");
+    throw new ApiError(409, "User with this email already exists");
+  }
+
+  // Extract email domain and find organization
+  let organization = null;
+  let autoConnected = false;
+  
+  try {
+    const emailDomain = email.split('@')[1];
+    
+    if (emailDomain) {
+      // Find active organization with matching domain
+      organization = await Organization.findOne({ 
+        emailDomain: emailDomain.toLowerCase(),
+        status: "active" // Only connect to active organizations
+      });
+      
+      autoConnected = !!organization;
+    }
+  } catch (error) {
+    console.error("Error finding organization by domain:", error);
+    // Continue without organization if there's an error
   }
 
   // Create user
   const user = await User.create({ 
-    name: `${firstName} ${lastName}`,
-    email, 
+    name: `${firstName} ${lastName}`.trim(),
+    email: email.toLowerCase(), 
     password, 
     role: "member",
-    organization: null,
+    organization: organization ? organization._id : null,
     phone: phone || "",
     dateOfBirth: dateOfBirth || null,
     educationLevel: educationLevel || ""
   });
 
-  
-  const safeUser = await User.findById(user._id).select("-password -refreshToken");
+  // Add user to organization's members list if connected
+  if (organization) {
+    try {
+      await Organization.findByIdAndUpdate(
+        organization._id,
+        { 
+          $addToSet: { members: user._id } // Use addToSet to avoid duplicates
+        }
+      );
+    } catch (error) {
+      console.error("Error adding user to organization members:", error);
+      // Don't throw error, just log it
+    }
+  }
+
+  // Get user without sensitive data
+  const safeUser = await User.findById(user._id)
+    .select("-password -refreshToken")
+    .populate("organization", "name emailDomain"); // Populate organization details
+
+  // Prepare response message
+  let message = "User registered successfully";
+  if (autoConnected) {
+    message = `User registered and automatically connected to ${organization.name}`;
+  }
 
   return res.status(201).json(
-    new ApiResponse(201, { user: safeUser }, "User registered successfully")
+    new ApiResponse(
+      201, 
+      { 
+        user: safeUser, 
+        autoConnected,
+        organization: organization ? {
+          id: organization._id,
+          name: organization.name,
+          emailDomain: organization.emailDomain
+        } : null
+      }, 
+      message
+    )
   );
 });
-
 /**
  * Login User - Simple version
  */
