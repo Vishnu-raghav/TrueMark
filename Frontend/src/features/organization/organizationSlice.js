@@ -7,7 +7,7 @@ export const registerOrganization = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const res = await organizationService.register(data);
-      return res.data; // ✅ Return complete response data
+      return res.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error ||
@@ -23,7 +23,7 @@ export const loginOrganization = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const res = await organizationService.login(data);
-      return res.data; // ✅ Return complete response data
+      return res.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error ||
@@ -39,7 +39,7 @@ export const refreshOrgToken = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const res = await organizationService.refreshToken();
-      return res.data; // ✅ Return complete response data
+      return res.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error ||
@@ -55,7 +55,7 @@ export const logoutOrganization = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const res = await organizationService.logout();
-      return res.data; // ✅ Return complete response data
+      return res.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error ||
@@ -71,7 +71,7 @@ export const assignRole = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const res = await organizationService.assignRole(data);
-      return res.data; // ✅ Return complete response data
+      return res.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error ||
@@ -87,7 +87,7 @@ export const getOrganizationProfile = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const res = await organizationService.getProfile();
-      return res.data; // ✅ Return complete response data
+      return res.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error ||
@@ -97,13 +97,66 @@ export const getOrganizationProfile = createAsyncThunk(
   }
 );
 
+// ✅ NEW: GET ORGANIZATION STUDENTS
+export const getOrgStudents = createAsyncThunk(
+  "organization/getOrgStudents",
+  async (_, thunkAPI) => {
+    try {
+      const res = await organizationService.getStudents();
+      return res.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          "Failed to fetch students";
+      return thunkAPI.rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// ✅ NEW: SEARCH STUDENTS
+export const searchStudents = createAsyncThunk(
+  "organization/searchStudents",
+  async (query, thunkAPI) => {
+    try {
+      const res = await organizationService.searchStudents(query);
+      return res.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          "Failed to search students";
+      return thunkAPI.rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// ✅ NEW: GET STUDENTS COUNT
+export const getStudentsCount = createAsyncThunk(
+  "organization/getStudentsCount",
+  async (_, thunkAPI) => {
+    try {
+      const res = await organizationService.getStudentsCount();
+      return res.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          "Failed to get students count";
+      return thunkAPI.rejectWithValue(errorMessage);
+    }
+  }
+);
+
 const initialState = {
   organization: null,
   accessToken: null,
+  students: [], // ✅ NEW: Students list
+  studentsCount: 0, // ✅ NEW: Students count
   isError: false,
   isSuccess: false,
   isLoading: false,
   message: "",
+  // ✅ NEW: Students specific states
+  studentsLoading: false,
+  studentsError: false,
 };
 
 const organizationSlice = createSlice({
@@ -115,14 +168,21 @@ const organizationSlice = createSlice({
       state.isSuccess = false;
       state.isLoading = false;
       state.message = "";
+      state.studentsError = false;
     },
     clearOrganization: (state) => {
       state.organization = null;
       state.accessToken = null;
+      state.students = [];
+      state.studentsCount = 0;
     },
-    // ✅ NEW: Set access token manually if needed
     setOrgAccessToken: (state, action) => {
       state.accessToken = action.payload;
+    },
+    // ✅ NEW: Clear students data
+    clearStudents: (state) => {
+      state.students = [];
+      state.studentsCount = 0;
     }
   },
   extraReducers: (builder) => {
@@ -195,6 +255,8 @@ const organizationSlice = createSlice({
       .addCase(logoutOrganization.fulfilled, (state, action) => {
         state.organization = null;
         state.accessToken = null;
+        state.students = [];
+        state.studentsCount = 0;
         state.isError = false;
         state.isSuccess = true;
         state.isLoading = false;
@@ -207,6 +269,8 @@ const organizationSlice = createSlice({
         // Logout failed, but still clear local state for security
         state.organization = null;
         state.accessToken = null;
+        state.students = [];
+        state.studentsCount = 0;
       })
 
       // Assign Role
@@ -240,9 +304,62 @@ const organizationSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
+      })
+
+      // ✅ NEW: GET ORGANIZATION STUDENTS
+      .addCase(getOrgStudents.pending, (state) => {
+        state.studentsLoading = true;
+        state.studentsError = false;
+      })
+      .addCase(getOrgStudents.fulfilled, (state, action) => {
+        state.studentsLoading = false;
+        state.students = action.payload.data || action.payload;
+        state.message = action.payload.message || "Students fetched successfully";
+      })
+      .addCase(getOrgStudents.rejected, (state, action) => {
+        state.studentsLoading = false;
+        state.studentsError = true;
+        state.message = action.payload;
+      })
+
+      // ✅ NEW: SEARCH STUDENTS
+      .addCase(searchStudents.pending, (state) => {
+        state.studentsLoading = true;
+        state.studentsError = false;
+      })
+      .addCase(searchStudents.fulfilled, (state, action) => {
+        state.studentsLoading = false;
+        state.students = action.payload.data || action.payload;
+        state.message = action.payload.message || "Students search completed";
+      })
+      .addCase(searchStudents.rejected, (state, action) => {
+        state.studentsLoading = false;
+        state.studentsError = true;
+        state.message = action.payload;
+      })
+
+      // ✅ NEW: GET STUDENTS COUNT
+      .addCase(getStudentsCount.pending, (state) => {
+        state.studentsLoading = true;
+      })
+      .addCase(getStudentsCount.fulfilled, (state, action) => {
+        state.studentsLoading = false;
+        state.studentsCount = action.payload.data?.count || action.payload.count || 0;
+        state.message = action.payload.message || "Students count fetched";
+      })
+      .addCase(getStudentsCount.rejected, (state, action) => {
+        state.studentsLoading = false;
+        state.studentsError = true;
+        state.message = action.payload;
       });
   },
 });
 
-export const { resetOrgState, clearOrganization, setOrgAccessToken } = organizationSlice.actions;
+export const { 
+  resetOrgState, 
+  clearOrganization, 
+  setOrgAccessToken,
+  clearStudents 
+} = organizationSlice.actions;
+
 export default organizationSlice.reducer;

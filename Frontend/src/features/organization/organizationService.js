@@ -7,8 +7,13 @@ const organizationService = {
   logout: async () => axiosInstance.post("/organizations/logout"),
   assignRole: async (data) => axiosInstance.post("/organizations/assign-role", data),
   
-  // ✅ Profile endpoint - ensure backend has this
+  // ✅ Profile endpoint
   getProfile: async () => axiosInstance.get("/organizations/profile"),
+  
+  // ✅ NEW: Students management endpoints
+  getStudents: async () => axiosInstance.get("/org/students"),
+  searchStudents: async (query) => axiosInstance.get(`/org/students/search?query=${query}`),
+  getStudentsCount: async () => axiosInstance.get("/org/students/count"),
 };
 
 export default organizationService;
