@@ -5,10 +5,17 @@ import { User } from "../models/user.model.js";
 
 // Get all students for organization
 const getOrgStudents = asyncHandler(async (req, res) => {
+  // ✅ Check both req.organization and req.user for organization ID
+  const organizationId = req.organization?._id || req.user?.organization;
+  
+  if (!organizationId) {
+    throw new ApiError(401, "Organization not authenticated");
+  }
+
   const students = await User.find({
-    organization: req.user.organization,
+    organization: organizationId,
     role: "member"
-  }).select("name email phone dateOfBirth educationLevel");
+  }).select("name email phone dateOfBirth educationLevel status createdAt");
 
   return res.status(200).json(
     new ApiResponse(200, students, "Students fetched successfully")
@@ -19,23 +26,42 @@ const getOrgStudents = asyncHandler(async (req, res) => {
 const searchStudents = asyncHandler(async (req, res) => {
   const { query } = req.query;
   
+  if (!query || query.trim() === "") {
+    throw new ApiError(400, "Search query is required");
+  }
+
+  // ✅ Check both req.organization and req.user for organization ID
+  const organizationId = req.organization?._id || req.user?.organization;
+  
+  if (!organizationId) {
+    throw new ApiError(401, "Organization not authenticated");
+  }
+
   const students = await User.find({
-    organization: req.user.organization,
+    organization: organizationId,
     role: "member",
     $or: [
       { name: { $regex: query, $options: 'i' } },
       { email: { $regex: query, $options: 'i' } }
     ]
-  }).select("name email");
+  }).select("name email phone status createdAt");
 
   return res.status(200).json(
     new ApiResponse(200, students, "Students search results")
   );
 });
 
+// Get students count
 const getStudentsCount = asyncHandler(async (req, res) => {
+  // ✅ Check both req.organization and req.user for organization ID
+  const organizationId = req.organization?._id || req.user?.organization;
+  
+  if (!organizationId) {
+    throw new ApiError(401, "Organization not authenticated");
+  }
+
   const count = await User.countDocuments({
-    organization: req.user.organization || req.organization._id,
+    organization: organizationId,
     role: "member"
   });
 
@@ -44,4 +70,4 @@ const getStudentsCount = asyncHandler(async (req, res) => {
   );
 });
 
-export { getOrgStudents, searchStudents,getStudentsCount };
+export { getOrgStudents, searchStudents, getStudentsCount };

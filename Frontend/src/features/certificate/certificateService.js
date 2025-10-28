@@ -1,8 +1,13 @@
 import axiosInstance from "../../utils/axiosInstance";
 
 const certificateService = {
-  issueCertificate: async (userId, data) =>
-    axiosInstance.post(`/certificates/issue/${userId}`, data),
+  // ✅ FIX: Remove userId parameter - backend mein route different hai
+  issueCertificate: async (data) =>
+    axiosInstance.post(`/certificates/issue`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }),
 
   getCertificate: async (id) => axiosInstance.get(`/certificates/${id}`),
 

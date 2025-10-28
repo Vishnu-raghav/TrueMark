@@ -4,24 +4,31 @@ import { logoutUser } from "../auth/authslice.js";
 
 // ===== THUNKS =====
 
-// ISSUE CERTIFICATE - FIXED
+// ✅ FIX: ISSUE CERTIFICATE - Remove userId parameter
 export const issueCertificate = createAsyncThunk(
   "certificate/issueCertificate",
-  async ({ userId, data }, thunkAPI) => {
+  async (formData, thunkAPI) => { // ✅ Direct formData pass karen
     try {
-      const res = await certificateService.issueCertificate(userId, data);
-      console.log("issueCertificate Response:", res.data);
+      console.log("🔄 issueCertificate thunk called with data:", formData);
       
-      // ✅ FIX: Correct response structure
+      const res = await certificateService.issueCertificate(formData);
+      console.log("✅ issueCertificate Response:", res.data);
+      
       return res.data.data || res.data;
     } catch (error) {
+      console.error("❌ issueCertificate Error:", error);
+      
       if (error.isAuthError) thunkAPI.dispatch(logoutUser());
-      return thunkAPI.rejectWithValue(error.response?.data?.message || "Issue failed");
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || 
+        error.response?.data?.error || 
+        "Certificate issuance failed"
+      );
     }
   }
 );
 
-// GET CERTIFICATE BY ID - FIXED
+// GET CERTIFICATE BY ID
 export const getCertificate = createAsyncThunk(
   "certificate/getCertificate",
   async (id, thunkAPI) => {
@@ -29,7 +36,6 @@ export const getCertificate = createAsyncThunk(
       const res = await certificateService.getCertificate(id);
       console.log("getCertificate Response:", res.data);
       
-      // ✅ FIX: Correct response structure
       return res.data.data || res.data;
     } catch (error) {
       if (error.isAuthError) thunkAPI.dispatch(logoutUser());
@@ -38,7 +44,7 @@ export const getCertificate = createAsyncThunk(
   }
 );
 
-// LIST ISSUED CERTIFICATES (ORG) - FIXED
+// LIST ISSUED CERTIFICATES (ORG)
 export const listIssuedCertificates = createAsyncThunk(
   "certificate/listIssuedCertificates",
   async (_, thunkAPI) => {
@@ -46,7 +52,6 @@ export const listIssuedCertificates = createAsyncThunk(
       const res = await certificateService.listIssuedCertificates();
       console.log("listIssuedCertificates Response:", res.data);
       
-      // ✅ FIX: Correct response structure for arrays
       if (res.data && Array.isArray(res.data.data)) {
         return res.data.data;
       } else if (Array.isArray(res.data)) {
@@ -62,7 +67,7 @@ export const listIssuedCertificates = createAsyncThunk(
   }
 );
 
-// LIST USER CERTIFICATES - FIXED
+// LIST USER CERTIFICATES
 export const listUserCertificates = createAsyncThunk(
   "certificate/listUserCertificates",
   async (_, thunkAPI) => {
@@ -70,7 +75,6 @@ export const listUserCertificates = createAsyncThunk(
       const res = await certificateService.listUserCertificates();
       console.log("listUserCertificates Response:", res.data);
       
-      // ✅ FIX: Correct response structure for arrays
       if (res.data && Array.isArray(res.data.data)) {
         return res.data.data;
       } else if (Array.isArray(res.data)) {
@@ -86,7 +90,7 @@ export const listUserCertificates = createAsyncThunk(
   }
 );
 
-// VERIFY CERTIFICATE - FIXED
+// VERIFY CERTIFICATE
 export const verifyCertificate = createAsyncThunk(
   "certificate/verifyCertificate",
   async (id, thunkAPI) => {
@@ -109,7 +113,7 @@ export const verifyCertificate = createAsyncThunk(
   }
 );
 
-// DELETE CERTIFICATE - FIXED
+// DELETE CERTIFICATE
 export const deleteCertificate = createAsyncThunk(
   "certificate/deleteCertificate",
   async (id, thunkAPI) => {
@@ -139,13 +143,29 @@ const certificateSlice = createSlice({
   name: "certificate",
   initialState,
   reducers: {
-    reset: () => initialState,
+    reset: (state) => {
+      state.isError = false;
+      state.isSuccess = false;
+      state.isLoading = false;
+      state.message = "";
+    },
+    // ✅ ADD: Reset certificate state specifically
+    resetCertificateState: (state) => {
+      state.certificate = null;
+      state.isError = false;
+      state.isSuccess = false;
+      state.isLoading = false;
+      state.message = "";
+    }
   },
   extraReducers: (builder) => {
     builder
       // ISSUE
       .addCase(issueCertificate.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
+        state.isSuccess = false;
+        state.message = "";
       })
       .addCase(issueCertificate.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -157,6 +177,7 @@ const certificateSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
+        state.certificate = null;
       })
 
       // GET
@@ -240,5 +261,5 @@ const certificateSlice = createSlice({
   },
 });
 
-export const { reset } = certificateSlice.actions;
+export const { reset, resetCertificateState } = certificateSlice.actions;
 export default certificateSlice.reducer;

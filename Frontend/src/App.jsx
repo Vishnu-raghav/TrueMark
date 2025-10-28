@@ -135,12 +135,10 @@
 
 
 
-
-
 import { Routes, Route } from "react-router-dom";
 
 // Layouts
-import PublicLayout from "./layouts/PublicLayout";
+import PublicLayout from "./layouts/PublicLayout.jsx";
 import OrgLayout from "./layouts/OrgLayout";
 import MemberLayout from "./layouts/MemberLayout";
 
@@ -156,21 +154,15 @@ import SignIn from "./pages/auth/SignIn";
 import OrgSignUp from "./pages/auth/OrgSignUp";
 import MemberSignUp from "./pages/auth/MemberSignUp";
 
-// ✅ NEW: Organization Dashboard Pages
+// Organization Dashboard Pages
 import OrgHome from "./pages/dashboards/org/OrgHome";
-import OrgCertificates from "./pages/dashboards/org/OrgCertificates";
-import OrgStudents from "./pages/dashboards/org/OrgStudents";
 import OrgIssueCertificate from "./pages/dashboards/org/OrgIssueCertificate";
-// import OrgTemplates from "./pages/dashboards/org/OrgTemplates";
-// import OrgAnalytics from "./pages/dashboards/org/OrgAnalytics";
-import OrgSettings from "./pages/dashboards/org/OrgSettings";
 
 // Member Dashboard Pages
 import MemberHome from "./pages/dashboards/member/MemberHome";
 import MemberProfile from "./pages/dashboards/member/Profile.jsx";
 import MyCertificates from "./pages/dashboards/member/MyCertificates";
 import VerifyCertificate from "./pages/dashboards/member/VerifyCertificate";
-// import Achievements from "./pages/dashboards/member/Achievements";
 import Settings from "./pages/dashboards/member/Settings";
 
 // Protected Route
@@ -193,29 +185,24 @@ function App() {
         <Route path="/signup" element={<MemberSignUp />} />
       </Route>
 
-      {/* ✅ UPDATED: Organization Dashboard Routes */}
+      {/* Organization Dashboard Routes - PROPERLY NESTED */}
       <Route 
-        path="/org/*" 
+        path="/org" 
         element={
           <ProtectedRoute allowedRoles={["orgAdmin", "superAdmin", "issuer"]}>
             <OrgLayout />
           </ProtectedRoute>
         }
       >
+        {/* ✅ Yeh sab routes /org ke under honge */}
         <Route index element={<OrgHome />} />
         <Route path="dashboard" element={<OrgHome />} />
-        <Route path="certificates" element={<OrgCertificates />} />
-        <Route path="students" element={<OrgStudents />} />
         <Route path="issue" element={<OrgIssueCertificate />} />
-        {/* <Route path="templates" element={<OrgTemplates />} /> */}
-        {/* <Route path="analytics" element={<OrgAnalytics />} /> */}
-        <Route path="settings" element={<OrgSettings />} />
-        <Route path="profile" element={<OrgSettings />} />
       </Route>
 
       {/* Member Dashboard Routes */}
       <Route 
-        path="/member/*" 
+        path="/member" 
         element={
           <ProtectedRoute allowedRoles={["member"]}>
             <MemberLayout />
@@ -227,7 +214,6 @@ function App() {
         <Route path="my-certificates" element={<MyCertificates />} />
         <Route path="verify" element={<VerifyCertificate />} />
         <Route path="profile" element={<MemberProfile />} />
-        {/* <Route path="achievements" element={<Achievements />} /> */}
         <Route path="settings" element={<Settings />} />
       </Route>
 
