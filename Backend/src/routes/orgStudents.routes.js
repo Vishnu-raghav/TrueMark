@@ -1,11 +1,11 @@
 import express from 'express';
 import { getOrgStudents, searchStudents, getStudentsCount } from '../controllers/orgStudents.controller.js';
-import { orgVerifyJWT } from '../middlewares/auth.middleware.js';
+import { verifyOrgJWT } from '../middlewares/org.middleware.js';
 
 const router = express.Router();
 
 // Protected routes
-router.use(orgVerifyJWT);
+router.use(verifyOrgJWT);
 
 router.get('/', getOrgStudents);
 router.get('/search', searchStudents);

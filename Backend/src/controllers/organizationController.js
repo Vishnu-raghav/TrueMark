@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Organization } from "../models/Organization.model.js";
 import { User } from "../models/user.model.js";
 import { AuditLog } from "../models/AuditLog.model.js";
+import mongoose from "mongoose";
 
 /**
  * Write audit log
