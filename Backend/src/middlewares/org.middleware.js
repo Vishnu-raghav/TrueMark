@@ -20,7 +20,7 @@ export const verifyOrgJWT = asyncHandler(async (req, _, next) => {
     req.user = {
       _id: org.admin?._id || null,
       email: org.admin?.email || null,
-      role: org.admin?.role || "orgAdmin", // Default role for org admins
+      role: org.admin?.role || "orgAdmin", 
       organization: org._id
     };
 

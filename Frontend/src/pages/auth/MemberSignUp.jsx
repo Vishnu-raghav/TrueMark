@@ -1742,7 +1742,7 @@ export default function MemberSignUp() {
                     </div>
 
                     {/* Email - UNCHANGED */}
-                    <div>
+                    {/* <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Email Address *
                       </label>
@@ -1762,7 +1762,7 @@ export default function MemberSignUp() {
                       {errors.email && (
                         <p className="mt-1 text-sm text-red-600">{errors.email}</p>
                       )}
-                    </div>
+                    </div> */}
 
                     {/* ✅ NEW: Organization Domain Field */}
                     <div>
