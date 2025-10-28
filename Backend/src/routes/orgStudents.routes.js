@@ -1,5 +1,5 @@
 import express from 'express';
-import { getOrgStudents, searchStudents } from '../controllers/orgStudents.controller.js';
+import { getOrgStudents, searchStudents, getStudentsCount } from '../controllers/orgStudents.controller.js';
 import { orgVerifyJWT } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -9,5 +9,6 @@ router.use(orgVerifyJWT);
 
 router.get('/', getOrgStudents);
 router.get('/search', searchStudents);
+router.get('/count', getStudentsCount);
 
 export default router;

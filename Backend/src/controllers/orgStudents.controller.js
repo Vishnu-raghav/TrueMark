@@ -33,4 +33,15 @@ const searchStudents = asyncHandler(async (req, res) => {
   );
 });
 
-export { getOrgStudents, searchStudents };
+const getStudentsCount = asyncHandler(async (req, res) => {
+  const count = await User.countDocuments({
+    organization: req.user.organization || req.organization._id,
+    role: "member"
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, { count }, "Students count fetched successfully")
+  );
+});
+
+export { getOrgStudents, searchStudents,getStudentsCount };
