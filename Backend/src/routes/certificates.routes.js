@@ -17,44 +17,38 @@ const router = Router();
 
 /**
  * VERIFY Certificate (Public route)
- * Anyone can verify a certificate using its ID.
  */
 router.get("/verify/:certificateId", verifyCertificateController);
 
 /**
- * ISSUE Certificate (Organization Admin only)
- * Allows organization admins to issue certificates to users.
+ * ✅ FIXED: ISSUE Certificate - Remove userId parameter
  */
 router.post(
-  "/issue/:userId",
+  "/issue", // ✅ CHANGED: Remove /:userId
   verifyOrgJWT,
   isAdmin,
-  upload.single("certificate"),
+  upload.single("certificate"), // ✅ Field name: "certificate"
   optimizeImage,
   createCertificate
 );
 
 /**
  * LIST Issued Certificates (Organization-level)
- * Shows all certificates issued by the logged-in organization.
  */
 router.get("/issued", verifyOrgJWT, listCertificates);
 
 /**
  * LIST User Certificates (User-level)
- * Shows all certificates received by the logged-in user.
  */
 router.get("/my", verifyJWT, listUserCertificates);
 
 /**
  * GET Certificate by ID (User or Org)
- * Fetch a specific certificate by its ID.
  */
 router.get("/:certificateId", verifyJWT, getCertificate);
 
 /**
  * DELETE Certificate (Admin only)
- * Delete a certificate — accessible only to organization admins.
  */
 router.delete("/:certificateId", verifyOrgJWT, isAdmin, deleteCertificate);
 
