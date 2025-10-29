@@ -135,6 +135,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 import { Routes, Route } from "react-router-dom";
 
 // Layouts
@@ -157,6 +168,7 @@ import MemberSignUp from "./pages/auth/MemberSignUp";
 // Organization Dashboard Pages
 import OrgHome from "./pages/dashboards/org/OrgHome";
 import OrgIssueCertificate from "./pages/dashboards/org/OrgIssueCertificate";
+import AddStudent from "./pages/dashboards/org/AddStudent.jsx";
 
 // Member Dashboard Pages
 import MemberHome from "./pages/dashboards/member/MemberHome";
@@ -198,6 +210,7 @@ function App() {
         <Route index element={<OrgHome />} />
         <Route path="dashboard" element={<OrgHome />} />
         <Route path="issue" element={<OrgIssueCertificate />} />
+        <Route path="add-student" element={<AddStudent />} />
       </Route>
 
       {/* Member Dashboard Routes */}

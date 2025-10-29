@@ -11,10 +11,17 @@ const organizationService = {
   // ✅ Organization profile endpoint
   getProfile: async () => axiosInstance.get("/organizations/profile"),
   
-  // ✅ CORRECTED: Students management endpoints - now matching backend routes
-  getStudents: async () => axiosInstance.get("/org"), // ✅ CHANGED: Matches router.get('/')
-  searchStudents: async (query) => axiosInstance.get(`/org/search?query=${query}`), // ✅ CHANGED: Matches router.get('/search')
-  getStudentsCount: async () => axiosInstance.get("/org/count"), // ✅ CHANGED: Matches router.get('/count')
+  // ✅ UPDATED: Students management endpoints - now matching consolidated backend routes
+  getStudents: async () => axiosInstance.get("/organizations/students"),
+  searchStudents: async (query) => axiosInstance.get(`/organizations/students/search?query=${query}`),
+  getStudentsCount: async () => axiosInstance.get("/organizations/students/count"),
+   // ✅ ADD STUDENT ENDPOINT
+  addStudent: async (studentEmail) => 
+    axiosInstance.post("/organizations/add-student", { studentEmail }),
+  
+  // ✅ FIX STUDENTS ENDPOINT (Optional)
+  fixStudents: async () => 
+    axiosInstance.post("/organizations/fix-students"),
 };
 
 export default organizationService;
