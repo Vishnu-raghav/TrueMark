@@ -27,29 +27,39 @@
 //     console.error("Audit log write failed:", err.message);
 //   }
 // };
-
 // const createCertificate = asyncHandler(async (req, res) => {
-//   const { title, description, expiryDate, metaData } = req.body;
-//   const recipientId = req.params.userId;
+//   const { title, description, expiryDate, metaData, studentId } = req.body;
+  
+//   const recipientId = studentId || req.params.userId;
 
-//   if (!title || !recipientId) throw new ApiError(400, "Title and recipientId are required");
+//   if (!title || !recipientId) {
+//     throw new ApiError(400, "Title and student selection are required");
+//   }
 
 //   const recipient = await User.findById(recipientId);
-//   if (!recipient) throw new ApiError(404, "Recipient not found");
+//   if (!recipient) {
+//     throw new ApiError(404, "Selected student not found");
+//   }
 
 //   const certificateFile = req.file;
-//   if (!certificateFile) throw new ApiError(400, "Certificate file is required");
+//   if (!certificateFile) {
+//     throw new ApiError(400, "Certificate file is required");
+//   }
 
+//   // ✅ Upload file to Cloudinary
 //   const uploadedFile = await uploadOnCloudinary(certificateFile.path);
-//   if (!uploadedFile?.secure_url) throw new ApiError(500, "Failed to upload certificate file");
+//   if (!uploadedFile?.secure_url) {
+//     throw new ApiError(500, "Failed to upload certificate file");
+//   }
 
 //   const certificateId = nanoid(8);
 //   const issueDate = new Date().toISOString();
 
+//   // ✅ FIX: Use req.user.organization instead of req.organization
 //   const dataToHash = JSON.stringify({
 //     title,
 //     recipient: recipient._id.toString(),
-//     issuedBy: req.user.organization.toString(),
+//     issuedBy: req.user.organization.toString(), // ✅ CORRECTED
 //     issueDate,
 //   });
 
@@ -63,38 +73,42 @@
 //     verificationHash,
 //     issueDate,
 //     expiryDate,
-//     recipient: recipientId, // String format mein hi rahega
-//     issuedBy: req.user.organization,
+//     recipient: recipient._id,
+//     issuedBy: req.user.organization, // ✅ CORRECTED
 //     fileUrl: uploadedFile.secure_url,
 //     metaData,
 //   });
 
-//   // ✅ FIX: User ke certificates array mein bhi add karo
+//   // ✅ Add certificate to user's certificates array
 //   await User.findByIdAndUpdate(
-//     recipientId,
+//     recipient._id,
 //     { 
 //       $push: { certificates: certificate._id } 
 //     }
 //   );
 
-//   console.log("✅ Certificate created and added to user's certificates array");
+//   console.log("✅ Certificate created successfully:", {
+//     certificateId: certificate.certificateId,
+//     recipient: recipient.email,
+//     title: certificate.title
+//   });
 
 //   await writeAudit({
 //     req,
 //     user: req.user,
-//     organization: req.user.organization,
+//     organization: req.user.organization, // ✅ CORRECTED
 //     action: "ISSUE_CERTIFICATE",
-//     details: { certificateId, recipient: recipient.email },
+//     details: { 
+//       certificateId: certificate.certificateId, 
+//       recipient: recipient.email,
+//       title: certificate.title 
+//     },
 //   });
 
 //   return res
 //     .status(201)
 //     .json(new ApiResponse(201, certificate, "Certificate issued successfully"));
 // });
-
-
-
-
 // /**
 //  * DELETE Certificate
 //  */
@@ -115,7 +129,7 @@
 //   await writeAudit({
 //     req,
 //     user: req.user,
-//     organization: req.user.organization,
+//     organization: req.organization._id,
 //     action: "DELETE_CERTIFICATE",
 //     details: { certificateId: certificate.certificateId },
 //   });
@@ -136,7 +150,7 @@
 //   await writeAudit({
 //     req,
 //     user: req.user,
-//     organization: req.user.organization,
+//     organization: req.organization._id,
 //     action: "VIEW_CERTIFICATE",
 //     details: { certificateId: certificate.certificateId },
 //   });
@@ -148,8 +162,11 @@
 //  * LIST Certificates (organization-level)
 //  */
 // const listCertificates = asyncHandler(async (req, res) => {
-//   const certificates = await Certificate.find({ issuedBy: req.user.organization })
-//     .populate("recipient", "name email");
+//   const certificates = await Certificate.find({ issuedBy: req.organization._id })
+//     .populate("recipient", "name email")
+//     .sort({ createdAt: -1 });
+
+//   console.log("📜 Organization certificates found:", certificates.length);
 
 //   return res.status(200).json(new ApiResponse(200, certificates, "Certificates list fetched successfully"));
 // });
@@ -160,17 +177,14 @@
 // const listUserCertificates = asyncHandler(async (req, res) => {
 //   console.log("=== 🔍 DEBUG: listUserCertificates ===");
 //   console.log("User ID:", req.user._id);
-//   console.log("User ID string:", req.user._id.toString());
 
 //   try {
-//     // ✅ FIX: Use STRING comparison since recipient is stored as string
-//     const userIdString = req.user._id.toString();
-    
-//     const certificates = await Certificate.find({ recipient: userIdString })
+//     // ✅ FIX: Use ObjectId comparison since recipient is stored as ObjectId
+//     const certificates = await Certificate.find({ recipient: req.user._id })
 //       .populate("issuedBy", "name email")
 //       .sort({ issueDate: -1 });
 
-//     console.log("🔍 Certificates found with STRING comparison:", certificates.length);
+//     console.log("🔍 Certificates found with ObjectId comparison:", certificates.length);
     
 //     if (certificates.length > 0) {
 //       certificates.forEach((cert, index) => {
@@ -182,16 +196,7 @@
 //         });
 //       });
 //     } else {
-//       console.log("❌ No certificates found with string comparison");
-      
-//       // Debug: Check all certificates in DB
-//       const allCerts = await Certificate.find({});
-//       console.log("📊 All certificates in DB:", allCerts.map(c => ({
-//         id: c._id,
-//         title: c.title,
-//         recipient: c.recipient,
-//         recipientType: typeof c.recipient
-//       })));
+//       console.log("❌ No certificates found for this user");
 //     }
 
 //     return res.status(200).json(
@@ -211,15 +216,6 @@
 //   listCertificates, 
 //   listUserCertificates 
 // };
-
-
-
-
-
-
-
-
-
 
 
 
@@ -256,17 +252,7 @@ const writeAudit = async ({ req, user = null, organization = null, action, detai
 const createCertificate = asyncHandler(async (req, res) => {
   const { title, description, expiryDate, metaData, studentId } = req.body;
   
-  // ✅ FIX: Use studentId from form data instead of req.params
   const recipientId = studentId || req.params.userId;
-
-  console.log("📝 Certificate creation data:", {
-    title,
-    description,
-    expiryDate,
-    studentId,
-    recipientId,
-    files: req.file
-  });
 
   if (!title || !recipientId) {
     throw new ApiError(400, "Title and student selection are required");
@@ -291,16 +277,17 @@ const createCertificate = asyncHandler(async (req, res) => {
   const certificateId = nanoid(8);
   const issueDate = new Date().toISOString();
 
+  // ✅ FIX: Use req.user.organization instead of req.organization
   const dataToHash = JSON.stringify({
     title,
     recipient: recipient._id.toString(),
-    issuedBy: req.organization._id.toString(), // ✅ FIX: Use req.organization
+    issuedBy: req.user.organization.toString(), // ✅ CORRECTED
     issueDate,
   });
 
   const verificationHash = generateHMAC(dataToHash);
 
-  // ✅ Create certificate with proper ObjectId references
+  // ✅ Create certificate
   const certificate = await Certificate.create({
     title,
     description,
@@ -308,8 +295,8 @@ const createCertificate = asyncHandler(async (req, res) => {
     verificationHash,
     issueDate,
     expiryDate,
-    recipient: recipient._id, // ✅ Store as ObjectId
-    issuedBy: req.organization._id, // ✅ Store as ObjectId
+    recipient: recipient._id,
+    issuedBy: req.user.organization, // ✅ CORRECTED
     fileUrl: uploadedFile.secure_url,
     metaData,
   });
@@ -331,7 +318,7 @@ const createCertificate = asyncHandler(async (req, res) => {
   await writeAudit({
     req,
     user: req.user,
-    organization: req.organization._id,
+    organization: req.user.organization, // ✅ CORRECTED
     action: "ISSUE_CERTIFICATE",
     details: { 
       certificateId: certificate.certificateId, 
@@ -362,10 +349,11 @@ const deleteCertificate = asyncHandler(async (req, res) => {
 
   await certificate.deleteOne();
 
+  // ✅ FIX: Use req.user.organization instead of req.organization._id
   await writeAudit({
     req,
     user: req.user,
-    organization: req.organization._id,
+    organization: req.user.organization, // ✅ CORRECTED
     action: "DELETE_CERTIFICATE",
     details: { certificateId: certificate.certificateId },
   });
@@ -383,10 +371,11 @@ const getCertificate = asyncHandler(async (req, res) => {
 
   if (!certificate) throw new ApiError(404, "Certificate not found");
 
+  // ✅ FIX: Use req.user.organization instead of req.organization._id
   await writeAudit({
     req,
     user: req.user,
-    organization: req.organization._id,
+    organization: req.user.organization, // ✅ CORRECTED
     action: "VIEW_CERTIFICATE",
     details: { certificateId: certificate.certificateId },
   });
@@ -398,7 +387,8 @@ const getCertificate = asyncHandler(async (req, res) => {
  * LIST Certificates (organization-level)
  */
 const listCertificates = asyncHandler(async (req, res) => {
-  const certificates = await Certificate.find({ issuedBy: req.organization._id })
+  // ✅ FIX: Use req.user.organization instead of req.organization._id
+  const certificates = await Certificate.find({ issuedBy: req.user.organization })
     .populate("recipient", "name email")
     .sort({ createdAt: -1 });
 
