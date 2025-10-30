@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { 
   Users, 
   Search, 
-  Filter, 
   Mail, 
   Phone, 
   Calendar,

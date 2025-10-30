@@ -11,6 +11,7 @@ import {
   getStudentsCount,
   addStudentToOrg,
   fixAllStudents,
+  updateOrganizationProfile
 } from "../controllers/organizationController.js";
 import { verifyOrgJWT } from "../middlewares/org.middleware.js";
 import { isAdmin, isOrgAdminOrIssuer } from "../middlewares/role.middleware.js";
@@ -32,6 +33,7 @@ router.get("/students/search", verifyOrgJWT, isOrgAdminOrIssuer, searchStudents)
 router.get("/students/count", verifyOrgJWT, isOrgAdminOrIssuer, getStudentsCount);
 router.route("/add-student").post(verifyOrgJWT, addStudentToOrg);
 router.route("/fix-students").post(verifyOrgJWT, fixAllStudents)
+router.route("/update-profile").put(verifyOrgJWT, updateOrganizationProfile);
 
 // Admin only routes
 router.post("/assign-role", verifyOrgJWT, isAdmin, assignRole);

@@ -1132,6 +1132,76 @@ const fixAllStudents = asyncHandler(async (req, res) => {
   );
 });
 
+// organizationController.js mein yeh add karo
+
+/**
+ * UPDATE Organization Profile
+ */
+const updateOrganizationProfile = asyncHandler(async (req, res) => {
+  const organizationId = req.organization?._id || req.user?.organization;
+  
+  if (!organizationId) {
+    throw new ApiError(401, "Organization not authenticated");
+  }
+
+  const {
+    name,
+    email,
+    phone,
+    website,
+    address,
+    description,
+    type,
+    settings
+  } = req.body;
+
+  // Find organization
+  const organization = await Organization.findById(organizationId);
+  if (!organization) {
+    throw new ApiError(404, "Organization not found");
+  }
+
+  // Handle logo upload
+  if (req.file) {
+    const uploadedLogo = await uploadOnCloudinary(req.file.path);
+    if (uploadedLogo?.secure_url) {
+      organization.logo = uploadedLogo.secure_url;
+    }
+  }
+
+  // Update fields
+  if (name) organization.name = name;
+  if (email) organization.email = email;
+  if (phone) organization.phone = phone;
+  if (website) organization.website = website;
+  if (address) organization.address = address;
+  if (description) organization.description = description;
+  if (type) organization.type = type;
+  
+  if (settings) {
+    try {
+      const settingsObj = typeof settings === 'string' ? JSON.parse(settings) : settings;
+      organization.settings = { ...organization.settings, ...settingsObj };
+    } catch (error) {
+      console.error("Settings parse error:", error);
+    }
+  }
+
+  await organization.save();
+
+  await writeAudit({
+    req,
+    organization: organizationId,
+    user: req.user?._id,
+    action: "UPDATE_ORG_PROFILE",
+    details: { updatedFields: Object.keys(req.body) }
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, organization, "Organization profile updated successfully")
+  );
+});
+
 export { 
   registerOrganization, 
   loginOrganization, 
@@ -1142,6 +1212,7 @@ export {
   getOrgStudents,
   searchStudents,
   getStudentsCount,
-  addStudentToOrg,          // ✅ NEW
-  fixAllStudents            // ✅ NEW
+  addStudentToOrg,         
+  fixAllStudents,
+  updateOrganizationProfile       
 };

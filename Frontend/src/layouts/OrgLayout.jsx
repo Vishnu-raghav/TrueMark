@@ -17,7 +17,8 @@ export default function OrgLayout() {
     console.log("🛣️ Layout path:", path);
     
     if (path.includes('/issue')) return 'issue';
-    return 'dashboard'; // Sirf 2 options hain
+    if (path.includes('/add-student')) return 'add-student';
+    return 'dashboard';
   };
 
   const activeTab = getActiveTabFromPath();
@@ -25,7 +26,7 @@ export default function OrgLayout() {
   console.log("🎯 Layout active tab:", activeTab);
 
   return (
-    <div className="flex h-screen bg-gray-50  overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Sidebar */}
       <OrgSidebar 
         isOpen={sidebarOpen}
@@ -33,10 +34,8 @@ export default function OrgLayout() {
         activeTab={activeTab}
       />
       
-      {/* Main Content - Proper spacing */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${
-        sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'
-      }`}>
+      {/* Main Content - FIXED: Remove ml-64 like MemberLayout */}
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
         {/* Header */}
         <OrgHeader 
           onMenuToggle={toggleSidebar}
@@ -44,8 +43,8 @@ export default function OrgLayout() {
         />
         
         {/* Main Content Area - Compact padding */}
-        <main className="flex-1 overflow-y-auto p-4">
-          <div className="w-full">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="max-w-7xl mx-auto w-full">
             <Outlet />
           </div>
         </main>
@@ -54,11 +53,11 @@ export default function OrgLayout() {
   );
 }
 
-// Helper function to get page title based on active tab
 function getPageTitle(activeTab) {
   const titles = {
     'dashboard': 'Dashboard',
-    'issue': 'Issue Certificate'
+    'issue': 'Issue Certificate',
+    'add-student': 'Add Student'
   };
   return titles[activeTab] || 'Dashboard';
 }

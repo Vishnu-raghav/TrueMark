@@ -169,6 +169,8 @@ import MemberSignUp from "./pages/auth/MemberSignUp";
 import OrgHome from "./pages/dashboards/org/OrgHome";
 import OrgIssueCertificate from "./pages/dashboards/org/OrgIssueCertificate";
 import AddStudent from "./pages/dashboards/org/AddStudent.jsx";
+import OrgStudents from "./pages/dashboards/org/OrgStudents.jsx";
+import OrgProfile from "./pages/dashboards/org/OrgProfile.jsx";
 
 // Member Dashboard Pages
 import MemberHome from "./pages/dashboards/member/MemberHome";
@@ -211,6 +213,8 @@ function App() {
         <Route path="dashboard" element={<OrgHome />} />
         <Route path="issue" element={<OrgIssueCertificate />} />
         <Route path="add-student" element={<AddStudent />} />
+        <Route path="students" element={<OrgStudents />} />
+        <Route path="profile" element={<OrgProfile />} />
       </Route>
 
       {/* Member Dashboard Routes */}
