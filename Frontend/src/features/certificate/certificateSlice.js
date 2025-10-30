@@ -91,23 +91,38 @@ export const listUserCertificates = createAsyncThunk(
 );
 
 // VERIFY CERTIFICATE
+// VERIFY CERTIFICATE - FIXED VERSION
 export const verifyCertificate = createAsyncThunk(
   "certificate/verifyCertificate",
   async (id, thunkAPI) => {
     try {
+      console.log("🔄 verifyCertificate thunk called with ID:", id);
+      
       const res = await certificateService.verifyCertificate(id);
-      console.log("verifyCertificate Response:", res.data);
-      
-      const data = res.data.data || res.data || {};
-      
-      if (!data.valid || !data.certificate) {
-        return thunkAPI.rejectWithValue("Certificate not found or invalid");
-      }
+      console.log("✅ verifyCertificate API Response:", res.data);
 
-      return data.certificate;
+      const responseData = res.data;
+      
+      // ✅ FIX: Check the actual response structure
+      if (responseData.message && responseData.message.valid === true) {
+        // Success case - certificate is valid
+        return responseData.message.certificate;
+      } else if (responseData.valid === true && responseData.certificate) {
+        // Alternative success structure
+        return responseData.certificate;
+      } else {
+        // Certificate not valid
+        console.log("❌ Certificate validation failed:", responseData);
+        return thunkAPI.rejectWithValue(
+          responseData.message || "Certificate not found or invalid"
+        );
+      }
     } catch (error) {
+      console.error("❌ verifyCertificate Error:", error);
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message || "Verification failed"
+        error.response?.data?.message || 
+        error.message || 
+        "Verification failed"
       );
     }
   }
