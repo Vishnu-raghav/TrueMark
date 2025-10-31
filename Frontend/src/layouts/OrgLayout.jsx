@@ -3,7 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import OrgHeader from "../components/DashboardHeader";
 import OrgSidebar from "../components/DashboardSidebar";
 
-export default function OrgLayout() {
+export default function OrgLayout({ organization }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
 
@@ -11,19 +11,17 @@ export default function OrgLayout() {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Get active tab from current route
   const getActiveTabFromPath = () => {
     const path = location.pathname;
-    console.log("🛣️ Layout path:", path);
     
-    if (path.includes('/issue')) return 'issue';
-    if (path.includes('/add-student')) return 'add-student';
+    if (path.includes('/org/issue')) return 'issue';
+    if (path.includes('/org/add-student')) return 'add-student';
+    if (path.includes('/org/students')) return 'students';
+    if (path.includes('/org/profile')) return 'profile';
     return 'dashboard';
   };
 
   const activeTab = getActiveTabFromPath();
-
-  console.log("🎯 Layout active tab:", activeTab);
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -32,20 +30,22 @@ export default function OrgLayout() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         activeTab={activeTab}
+        organization={organization}
       />
       
-      {/* Main Content - FIXED: Remove ml-64 like MemberLayout */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
         {/* Header */}
         <OrgHeader 
           onMenuToggle={toggleSidebar}
           title={getPageTitle(activeTab)}
+          organization={organization}
         />
         
-        {/* Main Content Area - Compact padding */}
+        {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="max-w-7xl mx-auto w-full">
-            <Outlet />
+            <Outlet context={{ organization }} /> 
           </div>
         </main>
       </div>
@@ -57,7 +57,9 @@ function getPageTitle(activeTab) {
   const titles = {
     'dashboard': 'Dashboard',
     'issue': 'Issue Certificate',
-    'add-student': 'Add Student'
+    'add-student': 'Add Student',
+    'students': 'Manage Students',
+    'profile': 'Organization Profile'
   };
   return titles[activeTab] || 'Dashboard';
 }

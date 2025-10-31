@@ -1,6 +1,21 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import authService from "./authService.js";
 
+
+const getInitialState = () => {
+  const userFromStorage = localStorage.getItem('user');
+  const tokenFromStorage = localStorage.getItem('accessToken');
+  
+  return {
+    user: userFromStorage ? JSON.parse(userFromStorage) : null,
+    accessToken: tokenFromStorage || null,
+    isError: false,
+    isSuccess: false,
+    isLoading: false,
+    message: "",
+  };
+};
+
 // REGISTER
 export const registerUser = createAsyncThunk("auth/registerUser", async (data, thunkAPI) => {
   try {
@@ -11,13 +26,45 @@ export const registerUser = createAsyncThunk("auth/registerUser", async (data, t
   }
 });
 
-// LOGIN
+// LOGIN 
 export const loginUser = createAsyncThunk("auth/loginUser", async (data, thunkAPI) => {
   try {
     const res = await authService.loginUser(data);
-    return res.data.user || res.data.data?.user;
+    return res.data; // Return complete response
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || "Login failed");
+ 
+    console.log("🔴 Login error details:", error.response?.data);
+    
+    let errorMessage = "Invalid email or password";
+    
+    // Check if response is HTML instead of JSON
+    if (error.response?.data) {
+      const responseData = error.response.data;
+      
+      // If it's HTML error page (backend is returning HTML instead of JSON)
+      if (typeof responseData === 'string' && responseData.includes('<pre>')) {
+        const match = responseData.match(/<pre>([^<]+)<\/pre>/);
+        if (match && match[1]) {
+          // Extract the actual error message from HTML
+          const htmlError = match[1];
+          if (htmlError.includes('Invalid email or password')) {
+            errorMessage = "Invalid email or password";
+          } else {
+            // Get first line of error and clean it up
+            errorMessage = htmlError.split('<br>')[0].replace('Error:', '').trim();
+          }
+        }
+      } 
+      // If it's proper JSON error (normal case)
+      else if (responseData.message) {
+        errorMessage = responseData.message;
+      } else if (responseData.error) {
+        errorMessage = responseData.error;
+      }
+    }
+    
+    console.log("✅ Extracted error message:", errorMessage);
+    return thunkAPI.rejectWithValue(errorMessage);
   }
 });
 
@@ -51,7 +98,7 @@ export const refreshAccessToken = createAsyncThunk("auth/refreshAccessToken", as
   }
 });
 
-// ✅ UPDATE USER PROFILE
+// UPDATE USER PROFILE
 export const updateUserProfile = createAsyncThunk("auth/updateUserProfile", async (data, thunkAPI) => {
   try {
     const res = await authService.updateUserProfile(data);
@@ -61,7 +108,7 @@ export const updateUserProfile = createAsyncThunk("auth/updateUserProfile", asyn
   }
 });
 
-// ✅ CHANGE PASSWORD
+// CHANGE PASSWORD
 export const changePassword = createAsyncThunk("auth/changePassword", async (data, thunkAPI) => {
   try {
     const res = await authService.changePassword(data);
@@ -71,34 +118,33 @@ export const changePassword = createAsyncThunk("auth/changePassword", async (dat
   }
 });
 
-const initialState = {
-  user: null,
-  accessToken: null,
-  isError: false,
-  isSuccess: false,
-  isLoading: false,
-  message: "",
-};
-
 const authSlice = createSlice({
   name: "auth",
-  initialState,
+  initialState: getInitialState(),
   reducers: {
-    // ✅ Reset state utility
+    // Reset state utility
     resetAuthState: (state) => {
       state.isError = false;
       state.isSuccess = false;
       state.isLoading = false;
       state.message = "";
     },
-    // ✅ Clear user data on manual logout
+    
     clearUser: (state) => {
       state.user = null;
       state.accessToken = null;
+      localStorage.removeItem('user');
+      localStorage.removeItem('accessToken');
     },
-    // ✅ Set user data manually
-    setUser: (state, action) => {
-      state.user = action.payload;
+   
+    setCredentials: (state, action) => {
+      const { user, accessToken } = action.payload;
+      state.user = user;
+      state.accessToken = accessToken;
+      
+      // Save to localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('accessToken', accessToken);
     }
   },
   extraReducers: (builder) => {
@@ -114,6 +160,11 @@ const authSlice = createSlice({
         state.isSuccess = true;
         state.user = action.payload;
         state.message = "Registration Successful";
+        
+      
+        if (action.payload) {
+          localStorage.setItem('user', JSON.stringify(action.payload));
+        }
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -122,7 +173,7 @@ const authSlice = createSlice({
         state.user = null;
       })
 
-      // LOGIN
+      // LOGIN - UPDATED with localStorage
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
@@ -131,15 +182,41 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload;
-        state.accessToken = action.payload.accessToken;
+        
+        //  Handle different response formats
+        const userData = action.payload.user || action.payload.data?.user || action.payload;
+        const token = action.payload.accessToken || action.payload.data?.accessToken;
+        
+        state.user = userData;
+        state.accessToken = token;
         state.message = "Login Successful";
+        
+        // Save to localStorage
+        localStorage.setItem('user', JSON.stringify(userData));
+        if (token) {
+          localStorage.setItem('accessToken', token);
+        }
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.user = null;
-        state.message = action.payload;
+        state.accessToken = null;
+        
+        //  FIXED: Always show user-friendly message
+        
+        const errorMsg = action.payload;
+        if (errorMsg.includes("failed") || errorMsg.includes("status code") || errorMsg.includes("Request failed")) {
+          state.message = "Invalid email or password";
+        } else {
+          state.message = errorMsg;
+        }
+        
+        console.log("🔴 Login rejected - error:", action.payload);
+        console.log("✅ Showing message to user:", state.message);
+        
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
       })
 
       // GET CURRENT USER
@@ -150,36 +227,59 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.user = action.payload;
+        
+        // ✅ Update localStorage with fresh user data
+        localStorage.setItem('user', JSON.stringify(action.payload));
       })
       .addCase(getCurrentUser.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.user = null;
         state.message = action.payload;
+        
+        // ✅ Clear localStorage if getting current user fails
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
       })
 
-      // LOGOUT
+      // LOGOUT - ✅ UPDATED with localStorage
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.accessToken = null;
         state.isSuccess = true;
         state.message = "Logout Successful";
+        
+        // ✅ Clear localStorage on logout
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
       })
       .addCase(logoutUser.rejected, (state, action) => {
         state.isError = true;
         state.message = action.payload;
+        
+        // ✅ Still clear localStorage even if API call fails
+        state.user = null;
+        state.accessToken = null;
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
       })
 
-      // REFRESH TOKEN
+      // REFRESH TOKEN - ✅ UPDATED with localStorage
       .addCase(refreshAccessToken.fulfilled, (state, action) => {
         state.accessToken = action.payload;
+        // ✅ Update token in localStorage
+        localStorage.setItem('accessToken', action.payload);
       })
       .addCase(refreshAccessToken.rejected, (state, action) => {
         state.isError = true;
         state.message = action.payload;
+        
+        // ✅ Clear tokens if refresh fails
+        state.accessToken = null;
+        localStorage.removeItem('accessToken');
       })
 
-      // ✅ UPDATE USER PROFILE
+      // UPDATE USER PROFILE - ✅ UPDATED with localStorage
       .addCase(updateUserProfile.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
@@ -189,6 +289,9 @@ const authSlice = createSlice({
         state.isSuccess = true;
         state.user = action.payload;
         state.message = "Profile updated successfully";
+        
+        // ✅ Update user in localStorage
+        localStorage.setItem('user', JSON.stringify(action.payload));
       })
       .addCase(updateUserProfile.rejected, (state, action) => {
         state.isLoading = false;
@@ -196,7 +299,7 @@ const authSlice = createSlice({
         state.message = action.payload;
       })
 
-      // ✅ CHANGE PASSWORD
+      // CHANGE PASSWORD
       .addCase(changePassword.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
@@ -214,5 +317,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { resetAuthState, clearUser, setUser } = authSlice.actions;
+export const { resetAuthState, clearUser, setCredentials } = authSlice.actions;
 export default authSlice.reducer;

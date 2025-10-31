@@ -15,26 +15,26 @@ const DashboardSidebar = ({
   const isMember = !!user;
   const basePath = isMember ? '/member' : '/org';
 
-  // ✅ CORRECTED: Routes ko actual app routes ke according banayein
   const commonMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
     { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
-    { id: 'settings', label: 'Settings', icon: '⚙️', path: '/settings' },
   ];
 
-  // ✅ UPDATED: Organization menu me "Add Student" add kiya
+  
   const orgMenuItems = [
     { id: 'students', label: 'Students', icon: '👥', path: '/students' },
-    { id: 'add-student', label: 'Add Student', icon: '➕', path: '/add-student' }, // ✅ NEW
+    { id: 'add-student', label: 'Add Student', icon: '➕', path: '/add-student' }, 
     { id: 'issue', label: 'Issue Certificate', icon: '🎫', path: '/issue' },
   ];
 
   const memberMenuItems = [
     { id: 'my-certificates', label: 'My Certificates', icon: '🎫', path: '/my-certificates' },
     { id: 'verify', label: 'Verify Certificate', icon: '🔍', path: '/verify' },
+    { id: 'settings', label: 'Settings', icon: '⚙️', path: '/settings' },
+
   ];
 
-  // ✅ Combine menu items based on user type
+  // Combine menu items based on user type
   const allMenuItems = [
     ...commonMenuItems,
     ...(isOrganization ? orgMenuItems : []),
@@ -46,7 +46,6 @@ const DashboardSidebar = ({
     console.log("🔄 Navigating to:", fullPath);
     navigate(fullPath);
     
-    // Close sidebar on mobile after navigation
     if (window.innerWidth < 1024 && onClose) {
       onClose();
     }
@@ -75,11 +74,9 @@ const DashboardSidebar = ({
     }
   };
 
-  // ✅ Get active tab from current route
+  // Get active tab from current route
   const getActiveTabFromRoute = () => {
-    const currentPath = location.pathname;
-    console.log("📍 Current path:", currentPath);
-    
+    const currentPath = location.pathname;    
     const item = allMenuItems.find(item => {
       const fullPath = `${basePath}${item.path}`;
       return currentPath === fullPath || currentPath.startsWith(`${fullPath}/`);
@@ -210,13 +207,13 @@ const DashboardSidebar = ({
                     </button>
                   </>
                 )}
-                <button 
+                {/* <button 
                   onClick={() => handleQuickAction('verify')}
                   className="w-full flex items-center space-x-3 px-3 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-all shadow-sm text-sm font-medium"
                 >
                   <span className="text-lg">🔍</span>
                   <span>Verify Certificate</span>
-                </button>
+                </button> */}
               </div>
             </div>
           </nav>

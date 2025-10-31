@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser } from "../../features/auth/authslice.js";
+import { loginUser, resetAuthState } from "../../features/auth/authslice.js";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
 
 export default function MemberSignIn() {
@@ -10,29 +10,75 @@ export default function MemberSignIn() {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [localError, setLocalError] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isLoading, isError, message } = useSelector((state) => state.auth);
+  const { isLoading, isError, message, isSuccess, user } = useSelector((state) => state.auth);
+
+  // Clear errors when component mounts
+  useEffect(() => {
+    dispatch(resetAuthState());
+  }, [dispatch]);
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/member/dashboard");
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    //  Clear errors when user starts typing
+    if (localError || isError) {
+      setLocalError("");
+      if (isError) {
+        dispatch(resetAuthState());
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // ✅ Prevent default form submission
+    setSubmitted(true);
+    setLocalError("");
+    
+    // Basic validation
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setLocalError("Please fill in all fields");
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setLocalError("Please enter a valid email address");
+      return;
+    }
+
     try {
+      console.log("🔄 Attempting login...", { email: formData.email });
       const result = await dispatch(loginUser(formData));
-      if (result.type === "auth/loginUser/fulfilled") {
-        navigate("/member/dashboard");
+      
+      // Check if login was successful
+      if (loginUser.fulfilled.match(result)) {
+        console.log("✅ Login successful! User:", result.payload);
+        // Navigation will happen automatically due to useEffect above
       }
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("❌ Login failed in component:", error);
     }
   };
+
+  // Determine which error message to display
+  const displayError = localError || (isError && submitted ? message : "");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -52,14 +98,20 @@ export default function MemberSignIn() {
 
         {/* Form */}
         <form className="mt-8 space-y-6 bg-white p-8 rounded-2xl shadow-xl border border-gray-100" onSubmit={handleSubmit}>
-          {isError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {message}
+          {/* Error Message - Only show after submission */}
+          {displayError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm animate-fade-in">
+              <div className="flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                {displayError}
+              </div>
             </div>
           )}
 
           <div className="space-y-4">
-            {/* Email */}
+            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
@@ -70,16 +122,18 @@ export default function MemberSignIn() {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="pl-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  disabled={isLoading}
+                  className="pl-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="your@email.com"
                 />
               </div>
             </div>
 
-            {/* Password */}
+            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
@@ -90,16 +144,20 @@ export default function MemberSignIn() {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="pl-10 pr-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  disabled={isLoading}
+                  className="pl-10 pr-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Enter your password"
+                  minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={isLoading}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50 transition-colors duration-200"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -114,7 +172,8 @@ export default function MemberSignIn() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={isLoading}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                 Remember me
@@ -122,9 +181,12 @@ export default function MemberSignIn() {
             </div>
 
             <div className="text-sm">
-              <a href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link 
+                to="/forgot-password" 
+                className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
+              >
                 Forgot password?
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -133,10 +195,13 @@ export default function MemberSignIn() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="group relative w-full flex justify-center items-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Signing In...
+                </>
               ) : (
                 "Sign In to Account"
               )}
@@ -147,7 +212,10 @@ export default function MemberSignIn() {
           <div className="text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
-              <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link 
+                to="/signup" 
+                className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
+              >
                 Sign up here
               </Link>
             </p>
@@ -157,7 +225,10 @@ export default function MemberSignIn() {
           <div className="text-center pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-600">
               Are you an organization?{" "}
-              <Link to="/org/signin" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link 
+                to="/org/signin" 
+                className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
+              >
                 Sign in as organization
               </Link>
             </p>

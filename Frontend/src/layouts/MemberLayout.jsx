@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Outlet } from "react-router-dom";
 import DashboardHeader from "../components/DashboardHeader";
 import DashboardSidebar from "../components/DashboardSidebar";
 
-export default function MemberLayout() {
+export default function MemberLayout({ user }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -19,6 +19,7 @@ export default function MemberLayout() {
         onClose={() => setSidebarOpen(false)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        user={user} 
       />
       
       {/* Main Content */}
@@ -29,18 +30,19 @@ export default function MemberLayout() {
         <DashboardHeader 
           onMenuToggle={toggleSidebar}
           title={getPageTitle(activeTab)}
+          user={user} 
         />
         
         {/* Main Content Area */}
         <main className="flex-1 p-6 overflow-auto">
-          <Outlet />
+          <Outlet context={{ user }} /> 
         </main>
       </div>
     </div>
   );
 }
 
-// Helper function to get page title based on active tab
+
 function getPageTitle(activeTab) {
   const titles = {
     'dashboard': 'Dashboard',

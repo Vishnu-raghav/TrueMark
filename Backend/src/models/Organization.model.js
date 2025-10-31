@@ -69,8 +69,7 @@ const organizationSchema = new mongoose.Schema(
 
     emailDomain: {
     type: String,
-    required: true,
-    default: "example.com" // Temporary
+    default: "example.com" 
   },
   
   // Settings for auto-approval
