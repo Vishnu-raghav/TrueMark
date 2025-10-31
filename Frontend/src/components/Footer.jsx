@@ -41,8 +41,8 @@ export default function Footer() {
                 <span className="text-white font-bold text-lg">✓</span>
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-white">CertiVerify</h3>
-                <p className="text-sm text-blue-400 font-medium">by TrueMark</p>
+                <h3 className="text-2xl font-bold text-white">Proofin</h3>
+                <p className="text-sm text-blue-400 font-medium">by Vishnu</p>
               </div>
             </div>
             <p className="text-gray-400 text-lg leading-relaxed max-w-md">
@@ -50,10 +50,10 @@ export default function Footer() {
             </p>
             <div className="flex space-x-4">
               {[
-                { icon: FaFacebookF, href: "#" },
-                { icon: FaTwitter, href: "#" },
-                { icon: FaLinkedinIn, href: "#" },
-                { icon: FaInstagram, href: "#" }
+                { icon: FaFacebookF, href: "https://www.facebook.com/profile.php?id=100083036200150" },
+                { icon: FaTwitter, href: "https://x.com/VishnuR77165713" },
+                { icon: FaLinkedinIn, href: "https://www.linkedin.com/in/vishnu-raghav-093017261/" },
+                { icon: FaInstagram, href: "https://www.instagram.com/just.vishu_/" }
               ].map((social, index) => (
                 <a
                   key={index}
@@ -67,7 +67,7 @@ export default function Footer() {
           </div>
 
           {/* Solutions */}
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             <h4 className="text-lg font-semibold text-white">Solutions</h4>
             <ul className="space-y-3 text-gray-400">
               {[
@@ -88,7 +88,7 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> */}
 
           {/* Company */}
           <div className="space-y-4">
@@ -143,7 +143,7 @@ export default function Footer() {
         <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl p-8 mb-12 border border-gray-700">
           <div className="max-w-4xl mx-auto text-center">
             <h3 className="text-2xl font-bold text-white mb-4">
-              Stay Updated with CertiVerify
+              Stay Updated with Proofin
             </h3>
             <p className="text-gray-400 text-lg mb-6 max-w-2xl mx-auto">
               Get the latest updates on new features, security enhancements, and industry insights delivered to your inbox.
@@ -171,7 +171,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="flex flex-col lg:flex-row justify-between items-center pt-8 border-t border-gray-800">
           <div className="text-gray-500 text-sm mb-4 lg:mb-0">
-            &copy; {new Date().getFullYear()} CertiVerify by TrueMark. All rights reserved.
+            &copy; {new Date().getFullYear()} Proofin. All rights reserved.
           </div>
           
           <div className="flex flex-wrap justify-center gap-6 text-gray-500 text-sm">
