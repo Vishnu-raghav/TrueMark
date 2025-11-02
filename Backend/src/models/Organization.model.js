@@ -72,7 +72,7 @@ const organizationSchema = new mongoose.Schema(
     default: "example.com" 
   },
   
-  // Settings for auto-approval
+  
   settings: {
      autoApproveCertificates: { type: Boolean, default: false },
       allowMemberRegistration: { type: Boolean, default: true },

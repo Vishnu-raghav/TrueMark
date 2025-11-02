@@ -17,6 +17,7 @@ export default function MemberSignIn() {
   const navigate = useNavigate();
   const { isLoading, isError, message, isSuccess, user } = useSelector((state) => state.auth);
 
+ 
   // Clear errors when component mounts
   useEffect(() => {
     dispatch(resetAuthState());
@@ -46,11 +47,11 @@ export default function MemberSignIn() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // ✅ Prevent default form submission
+    e.preventDefault();
     setSubmitted(true);
     setLocalError("");
     
-    // Basic validation
+    
     if (!formData.email.trim() || !formData.password.trim()) {
       setLocalError("Please fill in all fields");
       return;
@@ -64,10 +65,9 @@ export default function MemberSignIn() {
     }
 
     try {
-      console.log("🔄 Attempting login...", { email: formData.email });
+      // console.log("🔄 Attempting login...", { email: formData.email });
       const result = await dispatch(loginUser(formData));
       
-      // Check if login was successful
       if (loginUser.fulfilled.match(result)) {
         console.log("✅ Login successful! User:", result.payload);
         // Navigation will happen automatically due to useEffect above
@@ -97,7 +97,9 @@ export default function MemberSignIn() {
         </div>
 
         {/* Form */}
-        <form className="mt-8 space-y-6 bg-white p-8 rounded-2xl shadow-xl border border-gray-100" onSubmit={handleSubmit}>
+        <form
+        autoComplete="off"
+        className="mt-8 space-y-6 bg-white p-8 rounded-2xl shadow-xl border border-gray-100" onSubmit={handleSubmit}>
           {/* Error Message - Only show after submission */}
           {displayError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm animate-fade-in">
