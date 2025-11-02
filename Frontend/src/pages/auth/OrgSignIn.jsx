@@ -46,9 +46,6 @@ export default function OrgSignIn() {
     e.preventDefault();
     setSubmitted(true);
     setLocalError("");
-    
-    console.log("🔄 Attempting organization login...", { email: formData.email });
-
    
     if (!formData.email.trim() || !formData.password.trim()) {
       setLocalError("Please fill in all fields");

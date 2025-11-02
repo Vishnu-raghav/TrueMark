@@ -923,10 +923,10 @@ export default function OrgSignUp() {
             </div>
             <div className="flex flex-col text-left">
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
-                CertiVerify
+                Proofin
               </span>
               <span className="text-xs text-gray-500 font-medium -mt-1">
-                by TrueMark
+                by vishnu
               </span>
             </div>
           </Link>
