@@ -451,7 +451,7 @@ export default function About() {
   const projectJourney = [
     {
       semester: "3rd Semester",
-      period: "Sept 2023 - Present", 
+      period: "Sept 2025 - Present", 
       title: "College Project Initiation",
       description: "Started as a 3rd semester academic project to solve real-world certificate verification challenges",
       achievements: ["Idea Validation", "Team Formation", "Tech Stack Selection"],
@@ -459,7 +459,7 @@ export default function About() {
     },
     {
       semester: "Development Phase", 
-      period: "Oct - Nov 2023",
+      period: "Oct - Nov 2025",
       title: "Agile Development",
       description: "Implemented the complete full-stack application using MERN stack with weekly sprints",
       achievements: ["MVP Development", "Feature Implementation", "Testing"],
@@ -467,7 +467,7 @@ export default function About() {
     },
     {
       semester: "Current Status",
-      period: "Dec 2023", 
+      period: "Dec 2025", 
       title: "Beta Testing & Refinement",
       description: "Currently in testing phase with continuous improvements based on feedback",
       achievements: ["User Testing", "Bug Fixing", "Performance Optimization"],
