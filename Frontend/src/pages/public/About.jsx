@@ -460,7 +460,7 @@ export default function About() {
     {
       semester: "Development Phase", 
       period: "Oct - Nov 2025",
-      title: "Agile Development",
+      title: "Development",
       description: "Implemented the complete full-stack application using MERN stack with weekly sprints",
       achievements: ["MVP Development", "Feature Implementation", "Testing"],
       icon: <Code className="w-6 h-6" />
