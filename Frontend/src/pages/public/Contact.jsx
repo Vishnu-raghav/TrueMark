@@ -8,9 +8,7 @@ import {
   Send, 
   CheckCircle, 
   Users, 
-  Globe,
-  Shield,
-  Zap,
+ 
   Github,
   Linkedin,
   BookOpen
