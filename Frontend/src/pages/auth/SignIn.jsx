@@ -70,15 +70,12 @@ export default function SignIn() {
       
       if (userType === "organization") {
         const result = await dispatch(loginOrganization(credentials)).unwrap();
-        console.log("Organization login success:", result);
         // Redirect to organization dashboard
         setTimeout(() => {
           navigate("/org/dashboard");
         }, 1000);
       } else {
         const result = await dispatch(loginUser(credentials)).unwrap();
-        console.log("Member login success:", result);
-        // Redirect to member dashboard
         setTimeout(() => {
           navigate("/member/dashboard");
         }, 1000);
@@ -87,7 +84,6 @@ export default function SignIn() {
     } catch (error) {
       console.error("Login failed:", error);
       
-      // Better error handling
       let errorMessage = "Login failed. Please try again.";
       
       if (typeof error === 'string') {

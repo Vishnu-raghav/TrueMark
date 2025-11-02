@@ -1,347 +1,7 @@
-// // import { useState } from "react";
-// // import { Link, useNavigate } from "react-router-dom";
-// // import { useDispatch, useSelector } from "react-redux";
-// // import { registerOrganization } from "../../features/organization/organizationSlice";
-// // import { Eye, EyeOff, Building2, Mail, Lock, User, Phone, Globe } from "lucide-react";
-
-// // export default function OrgSignUp() {
-// //   const [formData, setFormData] = useState({
-// //     organizationName: "",
-// //     email: "",
-// //     password: "",
-// //     confirmPassword: "",
-// //     contactPerson: "",
-// //     phone: "",
-// //     website: "",
-// //     industry: "",
-// //   });
-// //   const [showPassword, setShowPassword] = useState(false);
-// //   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-// //   const dispatch = useDispatch();
-// //   const navigate = useNavigate();
-// //   const { isLoading, isError, message } = useSelector((state) => state.organization);
-
-// //   const handleChange = (e) => {
-// //     setFormData({
-// //       ...formData,
-// //       [e.target.name]: e.target.value,
-// //     });
-// //   };
-
-// //   const handleSubmit = async (e) => {
-// //     e.preventDefault();
-    
-// //     if (formData.password !== formData.confirmPassword) {
-// //       alert("Passwords don't match!");
-// //       return;
-// //     }
-
-// //     try {
-// //       const result = await dispatch(registerOrganization(formData));
-// //       if (result.type === "organization/registerOrganization/fulfilled") {
-// //         navigate("/org/dashboard");
-// //       }
-// //     } catch (error) {
-// //       console.error("Registration failed:", error);
-// //     }
-// //   };
-
-// //   const industries = [
-// //     "Education",
-// //     "Corporate",
-// //     "Healthcare", 
-// //     "Government",
-// //     "Technology",
-// //     "Finance",
-// //     "Manufacturing",
-// //     "Other"
-// //   ];
-
-// //   return (
-// //     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-// //       <div className="max-w-2xl w-full space-y-8">
-// //         {/* Header */}
-// //         <div className="text-center">
-// //           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-// //             <Building2 className="w-8 h-8 text-white" />
-// //           </div>
-// //           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-// //             Create Organization Account
-// //           </h2>
-// //           <p className="mt-2 text-sm text-gray-600">
-// //             Start issuing and verifying certificates for your organization
-// //           </p>
-// //         </div>
-
-// //         {/* Form */}
-// //         <form className="mt-8 space-y-6 bg-white p-8 rounded-2xl shadow-xl border border-gray-100" onSubmit={handleSubmit}>
-// //           {isError && (
-// //             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-// //               {message}
-// //             </div>
-// //           )}
-
-// //           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-// //             {/* Organization Name */}
-// //             <div className="md:col-span-2">
-// //               <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 mb-2">
-// //                 Organization Name *
-// //               </label>
-// //               <div className="relative">
-// //                 <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-// //                 <input
-// //                   id="organizationName"
-// //                   name="organizationName"
-// //                   type="text"
-// //                   required
-// //                   value={formData.organizationName}
-// //                   onChange={handleChange}
-// //                   className="pl-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-// //                   placeholder="Enter organization name"
-// //                 />
-// //               </div>
-// //             </div>
-
-// //             {/* Email */}
-// //             <div className="md:col-span-2">
-// //               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-// //                 Organization Email *
-// //               </label>
-// //               <div className="relative">
-// //                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-// //                 <input
-// //                   id="email"
-// //                   name="email"
-// //                   type="email"
-// //                   required
-// //                   value={formData.email}
-// //                   onChange={handleChange}
-// //                   className="pl-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-// //                   placeholder="admin@organization.com"
-// //                 />
-// //               </div>
-// //             </div>
-
-// //             {/* Contact Person */}
-// //             <div>
-// //               <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 mb-2">
-// //                 Contact Person *
-// //               </label>
-// //               <div className="relative">
-// //                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-// //                 <input
-// //                   id="contactPerson"
-// //                   name="contactPerson"
-// //                   type="text"
-// //                   required
-// //                   value={formData.contactPerson}
-// //                   onChange={handleChange}
-// //                   className="pl-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-// //                   placeholder="Full name"
-// //                 />
-// //               </div>
-// //             </div>
-
-// //             {/* Phone */}
-// //             <div>
-// //               <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-// //                 Phone Number
-// //               </label>
-// //               <div className="relative">
-// //                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-// //                 <input
-// //                   id="phone"
-// //                   name="phone"
-// //                   type="tel"
-// //                   value={formData.phone}
-// //                   onChange={handleChange}
-// //                   className="pl-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-// //                   placeholder="+1 (555) 123-4567"
-// //                 />
-// //               </div>
-// //             </div>
-
-// //             {/* Website */}
-// //             <div>
-// //               <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
-// //                 Website
-// //               </label>
-// //               <div className="relative">
-// //                 <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-// //                 <input
-// //                   id="website"
-// //                   name="website"
-// //                   type="url"
-// //                   value={formData.website}
-// //                   onChange={handleChange}
-// //                   className="pl-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-// //                   placeholder="https://example.com"
-// //                 />
-// //               </div>
-// //             </div>
-
-// //             {/* Industry */}
-// //             <div>
-// //               <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">
-// //                 Industry *
-// //               </label>
-// //               <select
-// //                 id="industry"
-// //                 name="industry"
-// //                 required
-// //                 value={formData.industry}
-// //                 onChange={handleChange}
-// //                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-// //               >
-// //                 <option value="">Select Industry</option>
-// //                 {industries.map((industry) => (
-// //                   <option key={industry} value={industry}>
-// //                     {industry}
-// //                   </option>
-// //                 ))}
-// //               </select>
-// //             </div>
-
-// //             {/* Password */}
-// //             <div>
-// //               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-// //                 Password *
-// //               </label>
-// //               <div className="relative">
-// //                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-// //                 <input
-// //                   id="password"
-// //                   name="password"
-// //                   type={showPassword ? "text" : "password"}
-// //                   required
-// //                   value={formData.password}
-// //                   onChange={handleChange}
-// //                   className="pl-10 pr-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-// //                   placeholder="Minimum 8 characters"
-// //                 />
-// //                 <button
-// //                   type="button"
-// //                   onClick={() => setShowPassword(!showPassword)}
-// //                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-// //                 >
-// //                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-// //                 </button>
-// //               </div>
-// //             </div>
-
-// //             {/* Confirm Password */}
-// //             <div>
-// //               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-// //                 Confirm Password *
-// //               </label>
-// //               <div className="relative">
-// //                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-// //                 <input
-// //                   id="confirmPassword"
-// //                   name="confirmPassword"
-// //                   type={showConfirmPassword ? "text" : "password"}
-// //                   required
-// //                   value={formData.confirmPassword}
-// //                   onChange={handleChange}
-// //                   className="pl-10 pr-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-// //                   placeholder="Confirm your password"
-// //                 />
-// //                 <button
-// //                   type="button"
-// //                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-// //                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-// //                 >
-// //                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-// //                 </button>
-// //               </div>
-// //             </div>
-// //           </div>
-
-// //           {/* Terms */}
-// //           <div className="flex items-center">
-// //             <input
-// //               id="terms"
-// //               name="terms"
-// //               type="checkbox"
-// //               required
-// //               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-// //             />
-// //             <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-// //               I agree to the{" "}
-// //               <a href="/terms" className="text-blue-600 hover:text-blue-500">
-// //                 Terms of Service
-// //               </a>{" "}
-// //               and{" "}
-// //               <a href="/privacy" className="text-blue-600 hover:text-blue-500">
-// //                 Privacy Policy
-// //               </a>
-// //             </label>
-// //           </div>
-
-// //           {/* Submit Button */}
-// //           <div>
-// //             <button
-// //               type="submit"
-// //               disabled={isLoading}
-// //               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-// //             >
-// //               {isLoading ? (
-// //                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-// //               ) : (
-// //                 "Create Organization Account"
-// //               )}
-// //             </button>
-// //           </div>
-
-// //           {/* Sign In Link */}
-// //           <div className="text-center">
-// //             <p className="text-sm text-gray-600">
-// //               Already have an organization account?{" "}
-// //               <Link to="/org/signin" className="font-medium text-blue-600 hover:text-blue-500">
-// //                 Sign in here
-// //               </Link>
-// //             </p>
-// //           </div>
-// //         </form>
-// //       </div>
-// //     </div>
-// //   );
-// // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // import { useState } from "react";
 // import { Link, useNavigate } from "react-router-dom";
 // import { motion } from "framer-motion";
-// import { Eye, EyeOff, Building, User, Mail, MapPin, Phone, Globe, FileText, ArrowRight, CheckCircle, Shield } from "lucide-react";
+// import { Eye, EyeOff, Building, User, Mail, MapPin, Phone, Globe, FileText, ArrowRight, CheckCircle, Shield, AtSign } from "lucide-react";
 // import { useDispatch, useSelector } from "react-redux";
 // import { registerOrganization } from "../../features/organization/organizationSlice.js";
 
@@ -350,6 +10,7 @@
 //     // Organization Details
 //     orgName: "",
 //     orgEmail: "",
+//     emailDomain: "", 
 //     type: "",
 //     address: "",
 //     phone: "",
@@ -368,6 +29,7 @@
 //   const [currentStep, setCurrentStep] = useState(1);
 //   const [isLoading, setIsLoading] = useState(false);
 //   const [errors, setErrors] = useState({});
+//   const [domainSuggestions, setDomainSuggestions] = useState([]); // ✅ NEW: Domain suggestions
   
 //   const dispatch = useDispatch();
 //   const navigate = useNavigate();
@@ -376,19 +38,35 @@
 //   // ✅ FIXED: Correct enum values matching backend
 //   const organizationTypes = [
 //     { value: "college", label: "Educational Institution", icon: "🎓" },
-//     { value: "corporate", label: "Corporate Enterprise", icon: "🏢" },
-//     { value: "training", label: "Training Academy", icon: "🚀" },
-//     { value: "government", label: "Government Organization", icon: "🛡️" },
-//     { value: "nonprofit", label: "Non-Profit Organization", icon: "🤝" },
+//     { value: "coaching", label: "Coaching Institute", icon: "📚" },
+//     { value: "company", label: "Corporate Enterprise", icon: "🏢" },
+//     { value: "NGO", label: "Non-Profit Organization", icon: "🤝" },
+//     { value: "edtech", label: "EdTech Company", icon: "🚀" },
 //     { value: "other", label: "Other", icon: "🏭" },
 //   ];
 
-//   const handleChange = (e) => {
+//   // ✅ NEW: Extract domain from email and auto-fill
+//   const handleEmailChange = (e) => {
 //     const { name, value } = e.target;
 //     setFormData(prev => ({
 //       ...prev,
 //       [name]: value
 //     }));
+    
+//     // Auto-extract domain from organization email
+//     if (name === "orgEmail" && value.includes('@')) {
+//       const emailDomain = value.split('@')[1];
+//       if (!formData.emailDomain) {
+//         setFormData(prev => ({
+//           ...prev,
+//           emailDomain: emailDomain
+//         }));
+//       }
+      
+//       // Show domain suggestions
+//       const suggestions = getDomainSuggestions(emailDomain);
+//       setDomainSuggestions(suggestions);
+//     }
     
 //     // Clear error when user starts typing
 //     if (errors[name]) {
@@ -399,12 +77,59 @@
 //     }
 //   };
 
+//   // ✅ NEW: Get domain suggestions
+//   const getDomainSuggestions = (domain) => {
+//     const commonDomains = {
+//       'gmail.com': "Personal email domain detected",
+//       'yahoo.com': "Personal email domain detected", 
+//       'outlook.com': "Personal email domain detected",
+//       'hotmail.com': "Personal email domain detected"
+//     };
+    
+//     if (commonDomains[domain]) {
+//       return [commonDomains[domain]];
+//     }
+    
+//     return [
+//       "This domain will be used for student auto-registration",
+//       "Students with matching email domains will be automatically connected"
+//     ];
+//   };
+
+//   const handleChange = (e) => {
+//     const { name, value } = e.target;
+    
+//     // Use special handler for email fields
+//     if (name === "orgEmail") {
+//       handleEmailChange(e);
+//     } else {
+//       setFormData(prev => ({
+//         ...prev,
+//         [name]: value
+//       }));
+      
+//       // Clear error when user starts typing
+//       if (errors[name]) {
+//         setErrors(prev => ({
+//           ...prev,
+//           [name]: ""
+//         }));
+//       }
+//     }
+//   };
+
 //   const validateStep1 = () => {
 //     const newErrors = {};
     
 //     if (!formData.orgName.trim()) newErrors.orgName = "Organization name is required";
 //     if (!formData.orgEmail.trim()) newErrors.orgEmail = "Organization email is required";
 //     else if (!/\S+@\S+\.\S+/.test(formData.orgEmail)) newErrors.orgEmail = "Email is invalid";
+    
+//     // ✅ NEW: Validate email domain
+//     if (!formData.emailDomain.trim()) newErrors.emailDomain = "Email domain is required";
+//     else if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.emailDomain)) {
+//       newErrors.emailDomain = "Please enter a valid domain (e.g., company.com)";
+//     }
     
 //     if (!formData.type) newErrors.type = "Organization type is required";
     
@@ -447,21 +172,22 @@
 //     setIsLoading(true);
     
 //     try {
-//       // ✅ FIXED: Prepare data exactly as backend expects
+//       // ✅ UPDATED: Include emailDomain in submission data
 //       const submitData = {
 //         orgName: formData.orgName.trim(),
 //         orgEmail: formData.orgEmail.trim().toLowerCase(),
+//         emailDomain: formData.emailDomain.trim().toLowerCase(), // ✅ NEW: Include domain
 //         adminName: formData.adminName.trim(),
 //         adminEmail: formData.adminEmail.trim().toLowerCase(),
 //         adminPassword: formData.adminPassword,
-//         type: formData.type, // ✅ This should match enum values
+//         type: formData.type,
 //         address: formData.address?.trim() || "",
 //         phone: formData.phone?.trim() || "",
 //         website: formData.website?.trim() || "",
 //         description: formData.description?.trim() || "",
 //       };
       
-//       console.log("Submitting data:", submitData); // Debug log
+//       console.log("Submitting data:", submitData);
       
 //       const result = await dispatch(registerOrganization(submitData)).unwrap();
       
@@ -477,7 +203,6 @@
 //     } catch (error) {
 //       console.error("Registration failed:", error);
       
-//       // ✅ Better error handling for backend validation
 //       if (error.includes("validation failed")) {
 //         if (error.includes("type")) {
 //           setErrors({ submit: "Invalid organization type selected" });
@@ -516,7 +241,7 @@
 //   return (
 //     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
 //       <div className="max-w-4xl w-full">
-//         {/* Header */}
+//         {/* Header - UNCHANGED */}
 //         <div className="text-center mb-8">
 //           <Link to="/" className="inline-flex items-center space-x-3 mb-6">
 //             <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -540,7 +265,7 @@
 //           </p>
 //         </div>
 
-//         {/* Progress Steps */}
+//         {/* Progress Steps - UNCHANGED */}
 //         <div className="flex justify-center mb-8">
 //           <div className="flex items-center space-x-4">
 //             {[1, 2].map((step) => (
@@ -564,7 +289,7 @@
 //           </div>
 //         </div>
 
-//         {/* Form Container */}
+//         {/* Form Container - UNCHANGED */}
 //         <motion.div 
 //           className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
 //           initial={{ opacity: 0, y: 20 }}
@@ -572,7 +297,7 @@
 //           transition={{ duration: 0.5 }}
 //         >
 //           <div className="grid grid-cols-1 lg:grid-cols-3">
-//             {/* Left Side - Benefits */}
+//             {/* Left Side - Benefits - UNCHANGED */}
 //             <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white p-8 lg:p-10">
 //               <div className="space-y-6">
 //                 <div>
@@ -603,10 +328,10 @@
 //               </div>
 //             </div>
 
-//             {/* Right Side - Form */}
+//             {/* Right Side - Form - UPDATED */}
 //             <div className="lg:col-span-2 p-8 lg:p-10">
 //               <form onSubmit={handleSubmit} className="space-y-6">
-//                 {/* Step 1: Organization Details */}
+//                 {/* Step 1: Organization Details - UPDATED */}
 //                 {currentStep === 1 && (
 //                   <motion.div
 //                     initial={{ opacity: 0, x: 20 }}
@@ -619,7 +344,7 @@
 //                       Organization Information
 //                     </h3>
 
-//                     {/* Organization Name */}
+//                     {/* Organization Name - UNCHANGED */}
 //                     <div>
 //                       <label className="block text-sm font-medium text-gray-700 mb-2">
 //                         Organization Name *
@@ -642,7 +367,7 @@
 //                       )}
 //                     </div>
 
-//                     {/* Organization Email */}
+//                     {/* Organization Email - UNCHANGED */}
 //                     <div>
 //                       <label className="block text-sm font-medium text-gray-700 mb-2">
 //                         Organization Email *
@@ -665,7 +390,46 @@
 //                       )}
 //                     </div>
 
-//                     {/* Organization Type */}
+//                     {/* ✅ NEW: Email Domain Field */}
+//                     <div>
+//                       <label className="block text-sm font-medium text-gray-700 mb-2">
+//                         Organization Email Domain *
+//                       </label>
+//                       <div className="relative">
+//                         <AtSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+//                         <input
+//                           type="text"
+//                           name="emailDomain"
+//                           value={formData.emailDomain}
+//                           onChange={handleChange}
+//                           className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${
+//                             errors.emailDomain ? "border-red-500" : "border-gray-300"
+//                           }`}
+//                           placeholder="e.g., eitfaridabad.co.in"
+//                         />
+//                       </div>
+//                       {errors.emailDomain && (
+//                         <p className="mt-1 text-sm text-red-600">{errors.emailDomain}</p>
+//                       )}
+                      
+//                       {/* ✅ NEW: Domain Information */}
+//                       {domainSuggestions.length > 0 && (
+//                         <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+//                           <p className="text-sm text-blue-800 font-medium mb-1">Domain Information:</p>
+//                           {domainSuggestions.map((suggestion, index) => (
+//                             <p key={index} className="text-xs text-blue-700 flex items-start gap-2 mb-1">
+//                               <span className="text-blue-500 mt-0.5">•</span>
+//                               {suggestion}
+//                             </p>
+//                           ))}
+//                           <p className="text-xs text-blue-600 mt-2">
+//                             <strong>Note:</strong> Students with matching email domains will be automatically connected to your organization
+//                           </p>
+//                         </div>
+//                       )}
+//                     </div>
+
+//                     {/* Organization Type - UNCHANGED */}
 //                     <div>
 //                       <label className="block text-sm font-medium text-gray-700 mb-3">
 //                         Organization Type *
@@ -694,7 +458,7 @@
 //                       )}
 //                     </div>
 
-//                     {/* Optional Fields */}
+//                     {/* Optional Fields - UNCHANGED */}
 //                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 //                       <div>
 //                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -765,7 +529,7 @@
 //                       </div>
 //                     </div>
 
-//                     {/* Next Button */}
+//                     {/* Next Button - UNCHANGED */}
 //                     <button
 //                       type="button"
 //                       onClick={handleNext}
@@ -777,7 +541,7 @@
 //                   </motion.div>
 //                 )}
 
-//                 {/* Step 2: Admin Details */}
+//                 {/* Step 2: Admin Details - UNCHANGED */}
 //                 {currentStep === 2 && (
 //                   <motion.div
 //                     initial={{ opacity: 0, x: 20 }}
@@ -799,7 +563,7 @@
 //                       </button>
 //                     </div>
 
-//                     {/* Admin Name */}
+//                     {/* Admin Name - UNCHANGED */}
 //                     <div>
 //                       <label className="block text-sm font-medium text-gray-700 mb-2">
 //                         Admin Full Name *
@@ -822,7 +586,7 @@
 //                       )}
 //                     </div>
 
-//                     {/* Admin Email */}
+//                     {/* Admin Email - UNCHANGED */}
 //                     <div>
 //                       <label className="block text-sm font-medium text-gray-700 mb-2">
 //                         Admin Email Address *
@@ -845,7 +609,7 @@
 //                       )}
 //                     </div>
 
-//                     {/* Password */}
+//                     {/* Password - UNCHANGED */}
 //                     <div>
 //                       <label className="block text-sm font-medium text-gray-700 mb-2">
 //                         Password *
@@ -874,7 +638,7 @@
 //                       )}
 //                     </div>
 
-//                     {/* Confirm Password */}
+//                     {/* Confirm Password - UNCHANGED */}
 //                     <div>
 //                       <label className="block text-sm font-medium text-gray-700 mb-2">
 //                         Confirm Password *
@@ -903,7 +667,7 @@
 //                       )}
 //                     </div>
 
-//                     {/* Submit Button */}
+//                     {/* Submit Button - UNCHANGED */}
 //                     <button
 //                       type="submit"
 //                       disabled={isLoading || reduxLoading}
@@ -937,7 +701,7 @@
 //                 )}
 //               </form>
 
-//               {/* Footer Links */}
+//               {/* Footer Links - UNCHANGED */}
 //               <div className="mt-6 pt-6 border-t border-gray-100 text-center">
 //                 <p className="text-sm text-gray-600">
 //                   Already have an organization account?{" "}
@@ -950,7 +714,7 @@
 //           </div>
 //         </motion.div>
 
-//         {/* Security Footer */}
+//         {/* Security Footer - UNCHANGED */}
 //         <div className="text-center mt-6">
 //           <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200">
 //             <Shield className="w-3 h-3 text-green-500" />
@@ -975,17 +739,10 @@
 
 
 
-
-
-
-
-
-
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Building, User, Mail, MapPin, Phone, Globe, FileText, ArrowRight, CheckCircle, Shield, AtSign } from "lucide-react";
+import { Eye, EyeOff, Building, User, Mail, MapPin, Phone, Globe, FileText, ArrowRight, CheckCircle, Shield } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { registerOrganization } from "../../features/organization/organizationSlice.js";
 
@@ -994,7 +751,6 @@ export default function OrgSignUp() {
     // Organization Details
     orgName: "",
     orgEmail: "",
-    emailDomain: "", 
     type: "",
     address: "",
     phone: "",
@@ -1013,13 +769,12 @@ export default function OrgSignUp() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [domainSuggestions, setDomainSuggestions] = useState([]); // ✅ NEW: Domain suggestions
   
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isLoading: reduxLoading, isSuccess, message } = useSelector(state => state.organization);
 
-  // ✅ FIXED: Correct enum values matching backend
+  // Organization types
   const organizationTypes = [
     { value: "college", label: "Educational Institution", icon: "🎓" },
     { value: "coaching", label: "Coaching Institute", icon: "📚" },
@@ -1029,28 +784,12 @@ export default function OrgSignUp() {
     { value: "other", label: "Other", icon: "🏭" },
   ];
 
-  // ✅ NEW: Extract domain from email and auto-fill
-  const handleEmailChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
-    // Auto-extract domain from organization email
-    if (name === "orgEmail" && value.includes('@')) {
-      const emailDomain = value.split('@')[1];
-      if (!formData.emailDomain) {
-        setFormData(prev => ({
-          ...prev,
-          emailDomain: emailDomain
-        }));
-      }
-      
-      // Show domain suggestions
-      const suggestions = getDomainSuggestions(emailDomain);
-      setDomainSuggestions(suggestions);
-    }
     
     // Clear error when user starts typing
     if (errors[name]) {
@@ -1061,59 +800,12 @@ export default function OrgSignUp() {
     }
   };
 
-  // ✅ NEW: Get domain suggestions
-  const getDomainSuggestions = (domain) => {
-    const commonDomains = {
-      'gmail.com': "Personal email domain detected",
-      'yahoo.com': "Personal email domain detected", 
-      'outlook.com': "Personal email domain detected",
-      'hotmail.com': "Personal email domain detected"
-    };
-    
-    if (commonDomains[domain]) {
-      return [commonDomains[domain]];
-    }
-    
-    return [
-      "This domain will be used for student auto-registration",
-      "Students with matching email domains will be automatically connected"
-    ];
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    // Use special handler for email fields
-    if (name === "orgEmail") {
-      handleEmailChange(e);
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-      
-      // Clear error when user starts typing
-      if (errors[name]) {
-        setErrors(prev => ({
-          ...prev,
-          [name]: ""
-        }));
-      }
-    }
-  };
-
   const validateStep1 = () => {
     const newErrors = {};
     
     if (!formData.orgName.trim()) newErrors.orgName = "Organization name is required";
     if (!formData.orgEmail.trim()) newErrors.orgEmail = "Organization email is required";
     else if (!/\S+@\S+\.\S+/.test(formData.orgEmail)) newErrors.orgEmail = "Email is invalid";
-    
-    // ✅ NEW: Validate email domain
-    if (!formData.emailDomain.trim()) newErrors.emailDomain = "Email domain is required";
-    else if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.emailDomain)) {
-      newErrors.emailDomain = "Please enter a valid domain (e.g., company.com)";
-    }
     
     if (!formData.type) newErrors.type = "Organization type is required";
     
@@ -1156,11 +848,9 @@ export default function OrgSignUp() {
     setIsLoading(true);
     
     try {
-      // ✅ UPDATED: Include emailDomain in submission data
       const submitData = {
         orgName: formData.orgName.trim(),
         orgEmail: formData.orgEmail.trim().toLowerCase(),
-        emailDomain: formData.emailDomain.trim().toLowerCase(), // ✅ NEW: Include domain
         adminName: formData.adminName.trim(),
         adminEmail: formData.adminEmail.trim().toLowerCase(),
         adminPassword: formData.adminPassword,
@@ -1207,7 +897,7 @@ export default function OrgSignUp() {
     }
   };
 
-  // ✅ FIXED: Type selection with proper enum values
+  // Type selection
   const handleTypeSelect = (typeValue) => {
     setFormData(prev => ({
       ...prev,
@@ -1225,7 +915,7 @@ export default function OrgSignUp() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
       <div className="max-w-4xl w-full">
-        {/* Header - UNCHANGED */}
+        {/* Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-3 mb-6">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -1249,7 +939,7 @@ export default function OrgSignUp() {
           </p>
         </div>
 
-        {/* Progress Steps - UNCHANGED */}
+        {/* Progress Steps */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center space-x-4">
             {[1, 2].map((step) => (
@@ -1273,7 +963,7 @@ export default function OrgSignUp() {
           </div>
         </div>
 
-        {/* Form Container - UNCHANGED */}
+        {/* Form Container */}
         <motion.div 
           className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
@@ -1281,7 +971,7 @@ export default function OrgSignUp() {
           transition={{ duration: 0.5 }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-3">
-            {/* Left Side - Benefits - UNCHANGED */}
+            {/* Left Side - Benefits */}
             <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white p-8 lg:p-10">
               <div className="space-y-6">
                 <div>
@@ -1312,10 +1002,10 @@ export default function OrgSignUp() {
               </div>
             </div>
 
-            {/* Right Side - Form - UPDATED */}
+            {/* Right Side - Form */}
             <div className="lg:col-span-2 p-8 lg:p-10">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Step 1: Organization Details - UPDATED */}
+                {/* Step 1: Organization Details */}
                 {currentStep === 1 && (
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
@@ -1328,7 +1018,7 @@ export default function OrgSignUp() {
                       Organization Information
                     </h3>
 
-                    {/* Organization Name - UNCHANGED */}
+                    {/* Organization Name */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Organization Name *
@@ -1351,7 +1041,7 @@ export default function OrgSignUp() {
                       )}
                     </div>
 
-                    {/* Organization Email - UNCHANGED */}
+                    {/* Organization Email */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Organization Email *
@@ -1374,46 +1064,7 @@ export default function OrgSignUp() {
                       )}
                     </div>
 
-                    {/* ✅ NEW: Email Domain Field */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Organization Email Domain *
-                      </label>
-                      <div className="relative">
-                        <AtSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input
-                          type="text"
-                          name="emailDomain"
-                          value={formData.emailDomain}
-                          onChange={handleChange}
-                          className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${
-                            errors.emailDomain ? "border-red-500" : "border-gray-300"
-                          }`}
-                          placeholder="e.g., eitfaridabad.co.in"
-                        />
-                      </div>
-                      {errors.emailDomain && (
-                        <p className="mt-1 text-sm text-red-600">{errors.emailDomain}</p>
-                      )}
-                      
-                      {/* ✅ NEW: Domain Information */}
-                      {domainSuggestions.length > 0 && (
-                        <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <p className="text-sm text-blue-800 font-medium mb-1">Domain Information:</p>
-                          {domainSuggestions.map((suggestion, index) => (
-                            <p key={index} className="text-xs text-blue-700 flex items-start gap-2 mb-1">
-                              <span className="text-blue-500 mt-0.5">•</span>
-                              {suggestion}
-                            </p>
-                          ))}
-                          <p className="text-xs text-blue-600 mt-2">
-                            <strong>Note:</strong> Students with matching email domains will be automatically connected to your organization
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Organization Type - UNCHANGED */}
+                    {/* Organization Type */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-3">
                         Organization Type *
@@ -1442,7 +1093,7 @@ export default function OrgSignUp() {
                       )}
                     </div>
 
-                    {/* Optional Fields - UNCHANGED */}
+                    {/* Optional Fields */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1513,7 +1164,7 @@ export default function OrgSignUp() {
                       </div>
                     </div>
 
-                    {/* Next Button - UNCHANGED */}
+                    {/* Next Button */}
                     <button
                       type="button"
                       onClick={handleNext}
@@ -1525,7 +1176,7 @@ export default function OrgSignUp() {
                   </motion.div>
                 )}
 
-                {/* Step 2: Admin Details - UNCHANGED */}
+                {/* Step 2: Admin Details */}
                 {currentStep === 2 && (
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
@@ -1547,7 +1198,7 @@ export default function OrgSignUp() {
                       </button>
                     </div>
 
-                    {/* Admin Name - UNCHANGED */}
+                    {/* Admin Name */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Admin Full Name *
@@ -1570,7 +1221,7 @@ export default function OrgSignUp() {
                       )}
                     </div>
 
-                    {/* Admin Email - UNCHANGED */}
+                    {/* Admin Email */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Admin Email Address *
@@ -1593,7 +1244,7 @@ export default function OrgSignUp() {
                       )}
                     </div>
 
-                    {/* Password - UNCHANGED */}
+                    {/* Password */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Password *
@@ -1622,7 +1273,7 @@ export default function OrgSignUp() {
                       )}
                     </div>
 
-                    {/* Confirm Password - UNCHANGED */}
+                    {/* Confirm Password */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Confirm Password *
@@ -1651,7 +1302,7 @@ export default function OrgSignUp() {
                       )}
                     </div>
 
-                    {/* Submit Button - UNCHANGED */}
+                    {/* Submit Button */}
                     <button
                       type="submit"
                       disabled={isLoading || reduxLoading}
@@ -1685,7 +1336,7 @@ export default function OrgSignUp() {
                 )}
               </form>
 
-              {/* Footer Links - UNCHANGED */}
+              {/* Footer Links */}
               <div className="mt-6 pt-6 border-t border-gray-100 text-center">
                 <p className="text-sm text-gray-600">
                   Already have an organization account?{" "}
@@ -1698,7 +1349,7 @@ export default function OrgSignUp() {
           </div>
         </motion.div>
 
-        {/* Security Footer - UNCHANGED */}
+        {/* Security Footer */}
         <div className="text-center mt-6">
           <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200">
             <Shield className="w-3 h-3 text-green-500" />

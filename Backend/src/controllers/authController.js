@@ -45,19 +45,17 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "First name, last name, email and password are required");
   }
 
-  // Email format validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     throw new ApiError(400, "Please provide a valid email address");
   }
 
-  // Check if user exists
   const existedUser = await User.findOne({ email });
   if (existedUser) {
     throw new ApiError(409, "User with this email already exists");
   }
 
-  // Extract email domain and find organization
+ 
   let organization = null;
   let autoConnected = false;
   
@@ -75,7 +73,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
   } catch (error) {
     console.error("Error finding organization by domain:", error);
-    // Continue without organization if there's an error
+    
   }
 
   // Create user
@@ -96,21 +94,18 @@ const registerUser = asyncHandler(async (req, res) => {
       await Organization.findByIdAndUpdate(
         organization._id,
         { 
-          $addToSet: { members: user._id } // Use addToSet to avoid duplicates
+          $addToSet: { members: user._id } 
         }
       );
     } catch (error) {
       console.error("Error adding user to organization members:", error);
-      // Don't throw error, just log it
     }
   }
 
-  // Get user without sensitive data
   const safeUser = await User.findById(user._id)
     .select("-password -refreshToken")
     .populate("organization", "name emailDomain"); // Populate organization details
 
-  // Prepare response message
   let message = "User registered successfully";
   if (autoConnected) {
     message = `User registered and automatically connected to ${organization.name}`;
@@ -142,25 +137,20 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Email and password are required");
   }
 
-  // Find user with password
   const user = await User.findOne({ email }).select("+password +refreshToken");
   if (!user) {
     throw new ApiError(401, "Invalid email or password");
   }
 
-  // Check password
   const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid email or password");
   }
 
-  // Generate tokens
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user);
   
-  // Get user without sensitive data
   const safeUser = await User.findById(user._id).select("-password -refreshToken");
 
-  // Set cookies
   const cookieOptions = getCookieOptions();
 
   return res

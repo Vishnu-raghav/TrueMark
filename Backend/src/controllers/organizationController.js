@@ -498,7 +498,7 @@ const getStudentsCount = asyncHandler(async (req, res) => {
 });
 
 /**
- * ✅ NEW: Add student to organization (Manual Assignment)
+ *  Add student to organization 
  */
 const addStudentToOrg = asyncHandler(async (req, res) => {
   const { studentEmail } = req.body;
@@ -524,9 +524,9 @@ const addStudentToOrg = asyncHandler(async (req, res) => {
   }
 
   // Check if already in another organization
-  if (student.organization && String(student.organization) !== String(organizationId)) {
-    throw new ApiError(400, "Student already belongs to another organization");
-  }
+  // if (student.organization && String(student.organization) !== String(organizationId)) {
+  //   throw new ApiError(400, "Student already belongs to another organization");
+  // }
 
   // If already in this organization
   if (String(student.organization) === String(organizationId)) {
@@ -559,7 +559,7 @@ const addStudentToOrg = asyncHandler(async (req, res) => {
 });
 
 /**
- * ✅ NEW: Fix all students organization assignment
+ * Fix all students organization assignment
  */
 const fixAllStudents = asyncHandler(async (req, res) => {
   const organizationId = req.organization?._id;
@@ -611,7 +611,6 @@ const fixAllStudents = asyncHandler(async (req, res) => {
   );
 });
 
-// organizationController.js mein yeh add karo
 
 /**
  * UPDATE Organization Profile

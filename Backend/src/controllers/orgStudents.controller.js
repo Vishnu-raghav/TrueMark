@@ -5,7 +5,6 @@ import { User } from "../models/user.model.js";
 
 // Get all students for organization
 const getOrgStudents = asyncHandler(async (req, res) => {
-  // ✅ Check both req.organization and req.user for organization ID
   const organizationId = req.organization?._id || req.user?.organization;
   
   if (!organizationId) {
@@ -30,7 +29,7 @@ const searchStudents = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Search query is required");
   }
 
-  // ✅ Check both req.organization and req.user for organization ID
+  // Check both req.organization and req.user for organization ID
   const organizationId = req.organization?._id || req.user?.organization;
   
   if (!organizationId) {
@@ -53,7 +52,7 @@ const searchStudents = asyncHandler(async (req, res) => {
 
 // Get students count
 const getStudentsCount = asyncHandler(async (req, res) => {
-  // ✅ Check both req.organization and req.user for organization ID
+  // Check both req.organization and req.user for organization ID
   const organizationId = req.organization?._id || req.user?.organization;
   
   if (!organizationId) {

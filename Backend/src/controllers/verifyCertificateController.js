@@ -34,27 +34,16 @@ const verifyCertificateController = asyncHandler(async (req, res) => {
   const { certificateId } = req.params;
   if (!certificateId) throw new ApiError(400, "Certificate ID is required");
 
-  console.log("🔍 Verifying Certificate ID:", certificateId);
-
-  // ✅ FIX 1: Use proper population syntax
   const certificate = await Certificate.findOne({ certificateId })
     .populate("recipient", "name email")
-    .populate("issuedBy", "name email") // ✅ Make sure this matches your Organization model
-    .lean(); // ✅ Add lean() for better performance
-
+    .populate("issuedBy", "name email") 
+    .lean(); 
   if (!certificate) {
-    console.log("❌ Certificate not found with ID:", certificateId);
     throw new ApiError(404, "Certificate not found");
-  }
+  };
 
-  console.log("🔍 Certificate after population:", {
-    issuedBy: certificate.issuedBy, // ✅ Check what we get after population
-    recipient: certificate.recipient
-  });
-
-  // ✅ FIX 2: Better error handling for population issues
+  
   if (!certificate.issuedBy) {
-    console.log("⚠️ Population failed, trying manual population...");
     
     // Manual population if automatic fails
     const Organization = mongoose.model('Organization');
@@ -67,26 +56,17 @@ const verifyCertificateController = asyncHandler(async (req, res) => {
     }
   }
 
-  // ✅ FIX 3: Safe access to _id
   const dataToVerify = JSON.stringify({
     title: certificate.title,
     recipient: certificate.recipient._id.toString(),
-    issuedBy: certificate.issuedBy._id.toString(), // ✅ Now this should work
+    issuedBy: certificate.issuedBy._id.toString(), 
     issueDate: new Date(certificate.issueDate).toISOString(),
   });
 
-  console.log("🔍 Data for hash generation:", dataToVerify);
 
   const generatedHash = generateHMAC(dataToVerify);
   const isValid = compareHMAC(generatedHash, certificate.verificationHash);
 
-  console.log("🔍 Hash comparison result:", {
-    generated: generatedHash,
-    stored: certificate.verificationHash,
-    isValid: isValid
-  });
-
-  // Rest of the code remains same...
   let status = certificate.status;
   if (certificate.expiryDate && new Date(certificate.expiryDate) < new Date()) {
     status = "expired";
@@ -117,7 +97,7 @@ const verifyCertificateController = asyncHandler(async (req, res) => {
       status,
       certificate: isValid ? {
         ...certificate,
-        verificationHash: undefined // ✅ Remove hash from response
+        verificationHash: undefined 
       } : null,
     })
   );
